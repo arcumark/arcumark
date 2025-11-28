@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Arcumark",
+	title: {
+		template: "%s - Arcumark",
+		default: "Arcumark",
+	},
 	description: "Crafting visual traces and impressions in the browser.",
 };
 

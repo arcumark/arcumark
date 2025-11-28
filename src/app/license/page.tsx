@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "License",
+	description: "License for Arcumark",
+};
+
 const license = `MIT License
 
 Copyright (c) 2025 Arcumark (maintained by Minagishl)
