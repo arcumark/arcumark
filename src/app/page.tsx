@@ -1,59 +1,140 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { VideoPreset } from "@/lib/shared/presets";
+import { createProjectId } from "@/lib/utils/id";
+
+const skeletonBaseClasses = "bg-arcumark-skeleton bg-[length:160%_100%] animate-arcumark-skeleton";
+
+function PresetSkeleton(props: { keyIndex: number }) {
+	return (
+		<label
+			className={`block cursor-pointer border-2 bg-neutral-800 p-3 transition hover:border-blue-500 ${
+				props.keyIndex === 0 ? "border-blue-500" : "border-neutral-800"
+			}`}
+		>
+			<div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-200">
+				<input type="radio" name="preset" className="accent-blue-500" defaultChecked={props.keyIndex === 0} />
+				<div className="h-5 w-32 animate-pulse bg-neutral-700 text-sm" />
+			</div>
+			<div className="h-4 w-36 animate-pulse bg-neutral-700 text-sm" />
+		</label>
+	);
+}
 
 export default function Home() {
-	return (
-		<div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-sans sm:p-20">
-			<main className="row-start-2 flex flex-col items-center gap-[32px] sm:items-start">
-				<Image
-					className="dark:invert"
-					src="/next.svg"
-					alt="Next.js logo"
-					width={180}
-					height={38}
-					priority
-				/>
-				<ol className="list-inside list-decimal text-center font-mono text-sm/6 sm:text-left">
-					<li className="mb-2 tracking-[-.01em]">
-						Get started by editing{" "}
-						<code className="rounded bg-black/[.05] px-1 py-0.5 font-mono font-semibold dark:bg-white/[.06]">
-							src/app/page.tsx
-						</code>
-						.
-					</li>
-					<li className="tracking-[-.01em]">Save and see your changes instantly.</li>
-				</ol>
+	const router = useRouter();
+	const [presets, setPresets] = useState<VideoPreset[]>([]);
+	const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-				<div className="flex flex-col items-center gap-4 sm:flex-row">
-					<a
-						className="flex h-10 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-4 text-sm font-medium transition-colors hover:border-transparent hover:bg-[#f2f2f2] sm:h-12 sm:w-auto sm:px-5 sm:text-base md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-						href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						Read our docs
-					</a>
+	useEffect(() => {
+		let active = true;
+		setLoading(true);
+		fetch("/api/presets")
+			.then((res) => res.json() as Promise<VideoPreset[]>)
+			.then((data) => {
+				if (!active) return;
+				setPresets(data);
+				setSelectedPresetId(data[0]?.id ?? null);
+			})
+			.catch(() => {
+				if (!active) return;
+				setError("Failed to load presets");
+			})
+			.finally(() => {
+				if (!active) return;
+				setLoading(false);
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	const selectedPreset = useMemo(
+		() => presets.find((p) => p.id === selectedPresetId) ?? null,
+		[presets, selectedPresetId]
+	);
+
+	const handleNewProject = () => {
+		const id = createProjectId();
+		if (selectedPreset) {
+			try {
+				localStorage.setItem("arcumark:lastPreset", selectedPreset.id);
+			} catch (e) {
+				console.error(e);
+			}
+			router.push(`/editor/${id}?preset=${selectedPreset.id}`);
+		} else {
+			router.push(`/editor/${id}`);
+		}
+	};
+
+	return (
+		<div className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 py-12 text-neutral-50">
+			<div className="grid w-full max-w-3xl gap-6 border border-neutral-800 bg-neutral-900 p-8">
+				<div className="space-y-2">
+					<div className="text-[28px] font-bold">Arcumark</div>
+					<div className="text-[15px] text-neutral-400">
+						Crafting visual traces and impressions in the browser.
+					</div>
 				</div>
-			</main>
-			<footer className="row-start-3 flex flex-wrap items-center justify-center gap-[24px]">
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
-					Learn
-				</a>
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-					Go to nextjs.org →
-				</a>
-			</footer>
+				<div className="flex flex-wrap items-center gap-3">
+					<button
+						onClick={handleNewProject}
+						disabled={loading}
+						className="flex items-center gap-2 border border-blue-700 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+					>
+						New Project
+					</button>
+					{loading ? (
+						<div className={`h-4 w-40 ${skeletonBaseClasses}`} />
+					) : selectedPreset ? (
+						<div className="text-sm text-neutral-200">Using preset: {selectedPreset.name}</div>
+					) : (
+						<div className="h-5 w-52 animate-pulse bg-neutral-700 text-sm" />
+					)}
+				</div>
+				<div className="space-y-2">
+					<div className="text-[15px] font-semibold">Presets</div>
+					{error && <div className="text-[13px] text-red-400">{error}</div>}
+					{presets.length === 0 ? (
+						<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3" aria-label="Loading presets">
+							{Array.from({ length: 3 }).map((_, index) => (
+								<PresetSkeleton key={index} keyIndex={index} />
+							))}
+						</div>
+					) : (
+						<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+							{presets.map((preset) => (
+								<label
+									key={preset.id}
+									className={`block cursor-pointer border-2 bg-neutral-800 p-3 transition hover:border-blue-500 ${
+										selectedPresetId === preset.id ? "border-blue-500" : "border-neutral-800"
+									}`}
+								>
+									<div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-200">
+										<input
+											type="radio"
+											name="preset"
+											value={preset.id}
+											checked={selectedPresetId === preset.id}
+											onChange={() => setSelectedPresetId(preset.id)}
+											className="accent-blue-500"
+										/>
+										<span>{preset.name}</span>
+									</div>
+									<div className="text-xs text-neutral-400">
+										{preset.width}x{preset.height} • {preset.fps}fps • {preset.aspectRatioLabel}
+									</div>
+								</label>
+							))}
+						</div>
+					)}
+				</div>
+			</div>
 		</div>
 	);
 }
