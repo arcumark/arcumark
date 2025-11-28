@@ -7,6 +7,8 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
@@ -26,6 +28,8 @@
 		"@types/react-dom": "^19",
 		"eslint": "^9",
 		"eslint-config-next": "15.4.6",
+		"prettier": "^3.7.1",
+		"prettier-plugin-tailwindcss": "^0.7.1",
 		"tailwindcss": "^4",
 		"typescript": "^5",
 		"wrangler": "^4.51.0"
