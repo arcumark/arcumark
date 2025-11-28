@@ -76,8 +76,8 @@ export default function Home() {
 		<div className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 py-12 text-neutral-50">
 			<div className="grid w-full max-w-3xl gap-6 border border-neutral-800 bg-neutral-900 p-8">
 				<div className="space-y-2">
-					<div className="text-[28px] font-bold">Arcumark</div>
-					<div className="text-[15px] text-neutral-400">
+					<div className="text-3xl font-bold">Arcumark</div>
+					<div className="text-base text-neutral-400">
 						Crafting visual traces and impressions in the browser.
 					</div>
 				</div>
@@ -98,8 +98,8 @@ export default function Home() {
 					)}
 				</div>
 				<div className="space-y-2">
-					<div className="text-[15px] font-semibold">Presets</div>
-					{error && <div className="text-[13px] text-red-400">{error}</div>}
+					<div className="text-base font-semibold">Presets</div>
+					{error && <div className="text-sm text-red-400">{error}</div>}
 					{presets.length === 0 ? (
 						<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3" aria-label="Loading presets">
 							{Array.from({ length: 3 }).map((_, index) => (

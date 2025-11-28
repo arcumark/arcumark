@@ -26,8 +26,8 @@ export default function LicensePage() {
 		<div className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 py-12 text-neutral-50">
 			<div className="grid w-full max-w-3xl gap-6 border border-neutral-800 bg-neutral-900 p-8">
 				<div className="space-y-2">
-					<div className="text-[28px] font-bold">License</div>
-					<div className="text-[15px] text-neutral-400 mb-4">
+					<div className="text-3xl font-bold">License</div>
+					<div className="text-base text-neutral-400 mb-4">
 						Arcumark is licensed under the MIT License.
 					</div>
 					<div className="whitespace-pre-wrap text-sm text-neutral-200 font-mono p-4 bg-neutral-800">
