@@ -58,6 +58,7 @@ export function TimelineView({
 		duration: 0,
 	});
 	const isDraggingRef = useRef(false);
+	const isScrubbingRef = useRef(false);
 
 	const safeDuration = Math.max(0.001, timeline.duration);
 
@@ -142,6 +143,7 @@ export function TimelineView({
 		};
 		const handleUp = () => {
 			isDraggingRef.current = false;
+			isScrubbingRef.current = false;
 		};
 		const handleKey = (event: KeyboardEvent) => {
 			if (!selectedClipId) return;
@@ -156,15 +158,30 @@ export function TimelineView({
 				onDeleteClip(selectedClipId);
 			}
 		};
+		const handleScrubMove = (event: MouseEvent) => {
+			if (!isScrubbingRef.current) return;
+			const next = Math.max(0, getSecFromClientX(event.clientX));
+			onTimeChange(next);
+		};
 		window.addEventListener("mousemove", handleMove);
+		window.addEventListener("mousemove", handleScrubMove);
 		window.addEventListener("mouseup", handleUp);
 		window.addEventListener("keydown", handleKey);
 		return () => {
 			window.removeEventListener("mousemove", handleMove);
+			window.removeEventListener("mousemove", handleScrubMove);
 			window.removeEventListener("mouseup", handleUp);
 			window.removeEventListener("keydown", handleKey);
 		};
-	}, [getSecFromClientX, onDeleteClip, onMoveClip, selectedClipId, snapEnabled, snapTime]);
+	}, [
+		getSecFromClientX,
+		onDeleteClip,
+		onMoveClip,
+		onTimeChange,
+		selectedClipId,
+		snapEnabled,
+		snapTime,
+	]);
 
 	return (
 		<div className="flex h-full flex-col border border-neutral-800 bg-neutral-900">
@@ -235,6 +252,12 @@ export function TimelineView({
 				<div
 					className="relative h-full overflow-auto bg-neutral-950"
 					onClick={handleCanvasClick}
+					onMouseDown={(e) => {
+						// ignore when starting a clip drag (clip handlers call stopPropagation)
+						isScrubbingRef.current = true;
+						const next = Math.max(0, getSecFromClientX(e.clientX));
+						onTimeChange(next);
+					}}
 					ref={canvasRef}
 					onDragOver={(e) => {
 						e.preventDefault();
@@ -272,8 +295,14 @@ export function TimelineView({
 						style={{ width, minHeight: timelineContentHeight }}
 					>
 						<div
-							className="absolute top-0 bottom-0 w-[2px] bg-rose-500"
-							style={{ left: `${playheadLeft}px` }}
+							className="absolute top-0 bottom-0 z-10 w-[2px] bg-rose-500/50"
+							style={{ left: `${playheadLeft}px`, cursor: "ew-resize" }}
+							onMouseDown={(e) => {
+								e.stopPropagation();
+								isScrubbingRef.current = true;
+								const next = Math.max(0, getSecFromClientX(e.clientX));
+								onTimeChange(next);
+							}}
 						/>
 						{timeline.tracks.map((track) => (
 							<div key={track.id} className="relative h-12 border-b border-neutral-900 select-none">
