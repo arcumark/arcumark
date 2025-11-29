@@ -178,7 +178,7 @@ export function Viewer({
 								<track kind="captions" />
 							</video>
 						) : (
-							<div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">
+							<div className="flex h-full w-full items-center justify-center text-sm text-neutral-500 select-none">
 								Import a video and add it to the timeline to preview.
 							</div>
 						)}
@@ -269,7 +269,7 @@ export function Viewer({
 								</div>
 							</div>
 						)}
-						<div className="absolute top-2 right-2 border border-neutral-800 bg-neutral-900/80 px-2 py-1 font-mono text-xs text-neutral-100">
+						<div className="absolute top-2 right-2 border border-neutral-800 bg-neutral-900/80 px-2 py-1 font-mono text-xs text-neutral-100 select-none">
 							{formatTimecode(currentTime)}
 						</div>
 					</div>
@@ -290,7 +290,7 @@ export function Viewer({
 					/>
 				</div>
 				<div className="flex flex-none items-center justify-between text-xs text-neutral-300">
-					<div>Zoom</div>
+					<div className="select-none">Zoom</div>
 					<input
 						className="w-40"
 						type="range"
