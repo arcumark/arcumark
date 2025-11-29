@@ -197,7 +197,7 @@ export function TimelineView({
 					}}
 				>
 					<div
-						className="sticky top-0 z-10 flex h-7 items-center border-b border-neutral-800 bg-neutral-900"
+						className="sticky top-0 z-10 flex h-[36px] items-center border-b border-neutral-800 bg-neutral-900"
 						style={{ width }}
 					>
 						{markers.map((value) => {
@@ -205,7 +205,7 @@ export function TimelineView({
 							return (
 								<div
 									key={value}
-									className="flex h-[28px] items-center border-r border-neutral-800 pl-1 text-[11px] text-neutral-400 select-none"
+									className="flex h-[36px] items-center border-r border-neutral-800 pl-1 text-[11px] text-neutral-400 select-none"
 									style={{ width: markWidth }}
 								>
 									{value}s
