@@ -39,12 +39,13 @@ export function TimelineView({
 	const [muteState, setMuteState] = useState<Record<string, boolean>>({});
 	const [soloState, setSoloState] = useState<Record<string, boolean>>({});
 	const [visibilityState, setVisibilityState] = useState<Record<string, boolean>>({});
+	const leftScrollRef = useRef<HTMLDivElement | null>(null);
+	const rightScrollRef = useRef<HTMLDivElement | null>(null);
 	const canvasRef = useRef<HTMLDivElement | null>(null);
 	const trackHeight = 48;
-	const rulerHeight = 28;
 	const timelineContentHeight = useMemo(
-		() => timeline.tracks.length * trackHeight + rulerHeight,
-		[timeline.tracks.length, trackHeight, rulerHeight]
+		() => timeline.tracks.length * trackHeight,
+		[timeline.tracks.length, trackHeight]
 	);
 	const dragStateRef = useRef<{
 		clipId: string;
@@ -200,153 +201,176 @@ export function TimelineView({
 							Snap
 						</label>
 					</div>
-					<div className="grid auto-rows-[48px]">
-						{timeline.tracks.map((track) => (
-							<div
-								key={track.id}
-								className="flex h-12 items-center justify-between border-b border-neutral-800 px-3 text-xs text-neutral-200"
-							>
-								<div className="flex items-center gap-2">
-									<div className={trackBadgeClass(track.kind)} />
-									<div className="tracking-tight">{track.id.toUpperCase()}</div>
+					<div
+						ref={leftScrollRef}
+						className="flex-1 overflow-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+						onScroll={(e) => {
+							if (rightScrollRef.current) {
+								rightScrollRef.current.scrollTop = (e.currentTarget as HTMLDivElement).scrollTop;
+							}
+						}}
+					>
+						<div className="grid auto-rows-[48px]">
+							{timeline.tracks.map((track) => (
+								<div
+									key={track.id}
+									className="flex h-12 items-center justify-between border-b border-neutral-800 px-3 text-xs text-neutral-200"
+								>
+									<div className="flex items-center gap-2">
+										<div className={trackBadgeClass(track.kind)} />
+										<div className="tracking-tight">{track.id.toUpperCase()}</div>
+									</div>
+									<div className="flex gap-1">
+										<button
+											className={`border px-2 py-1 text-[11px] transition ${muteState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+											disabled={!selectedClipId}
+											onClick={() =>
+												selectedClipId &&
+												setMuteState((prev) => ({ ...prev, [track.id]: !prev[track.id] }))
+											}
+										>
+											M
+										</button>
+										<button
+											className={`border px-2 py-1 text-[11px] transition ${soloState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+											disabled={!selectedClipId}
+											onClick={() =>
+												selectedClipId &&
+												setSoloState((prev) => ({ ...prev, [track.id]: !prev[track.id] }))
+											}
+										>
+											S
+										</button>
+										<button
+											className={`border px-2 py-1 text-[11px] transition ${visibilityState[track.id] === false ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+											disabled={!selectedClipId}
+											onClick={() =>
+												selectedClipId &&
+												setVisibilityState((prev) => ({
+													...prev,
+													[track.id]: prev[track.id] === false ? true : false,
+												}))
+											}
+										>
+											V
+										</button>
+									</div>
 								</div>
-								<div className="flex gap-1">
-									<button
-										className={`border px-2 py-1 text-[11px] transition ${muteState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
-										disabled={!selectedClipId}
-										onClick={() =>
-											selectedClipId &&
-											setMuteState((prev) => ({ ...prev, [track.id]: !prev[track.id] }))
-										}
-									>
-										M
-									</button>
-									<button
-										className={`border px-2 py-1 text-[11px] transition ${soloState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
-										disabled={!selectedClipId}
-										onClick={() =>
-											selectedClipId &&
-											setSoloState((prev) => ({ ...prev, [track.id]: !prev[track.id] }))
-										}
-									>
-										S
-									</button>
-									<button
-										className={`border px-2 py-1 text-[11px] transition ${visibilityState[track.id] === false ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
-										disabled={!selectedClipId}
-										onClick={() =>
-											selectedClipId &&
-											setVisibilityState((prev) => ({
-												...prev,
-												[track.id]: prev[track.id] === false ? true : false,
-											}))
-										}
-									>
-										V
-									</button>
-								</div>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
 				</div>
-				<div
-					className="relative h-full overflow-auto bg-neutral-950"
-					onClick={handleCanvasClick}
-					onMouseDown={(e) => {
-						// ignore when starting a clip drag (clip handlers call stopPropagation)
-						isScrubbingRef.current = true;
-						const next = Math.max(0, getSecFromClientX(e.clientX));
-						onTimeChange(next);
-					}}
-					ref={canvasRef}
-					onDragOver={(e) => {
-						e.preventDefault();
-						e.dataTransfer.dropEffect = "copy";
-					}}
-					onDrop={(e) => {
-						e.preventDefault();
-						if (e.dataTransfer) {
-							onDropMedia({
-								dataTransfer: e.dataTransfer,
-								seconds: snapTime(getSecFromClientX(e.clientX)),
-							});
-						}
-					}}
-				>
+				<div className="relative h-full overflow-hidden bg-neutral-950">
 					<div
-						className="sticky top-0 z-10 flex h-[36px] items-center border-b border-neutral-800 bg-neutral-900"
-						style={{ width }}
-					>
-						{markers.map((value) => {
-							const markWidth = rulerStep * (width / safeDuration);
-							return (
-								<div
-									key={value}
-									className="flex h-[36px] items-center border-r border-neutral-800 pl-1 text-[11px] text-neutral-400 select-none"
-									style={{ width: markWidth }}
-								>
-									{value}s
-								</div>
-							);
-						})}
-					</div>
-					<div
-						className="relative min-w-[800px]"
-						style={{ width, minHeight: timelineContentHeight }}
+						ref={(el) => {
+							rightScrollRef.current = el;
+							canvasRef.current = el;
+						}}
+						className="h-full overflow-auto"
+						onScroll={(e) => {
+							if (leftScrollRef.current) {
+								leftScrollRef.current.scrollTop = (e.currentTarget as HTMLDivElement).scrollTop;
+							}
+						}}
+						onClick={handleCanvasClick}
+						onMouseDown={(e) => {
+							// ignore when starting a clip drag (clip handlers call stopPropagation)
+							isScrubbingRef.current = true;
+							const next = Math.max(0, getSecFromClientX(e.clientX));
+							onTimeChange(next);
+						}}
+						onDragOver={(e) => {
+							e.preventDefault();
+							e.dataTransfer.dropEffect = "copy";
+						}}
+						onDrop={(e) => {
+							e.preventDefault();
+							if (e.dataTransfer) {
+								onDropMedia({
+									dataTransfer: e.dataTransfer,
+									seconds: snapTime(getSecFromClientX(e.clientX)),
+								});
+							}
+						}}
 					>
 						<div
-							className="absolute top-0 bottom-0 z-10 w-[2px] bg-rose-500/50"
-							style={{ left: `${playheadLeft}px`, cursor: "ew-resize" }}
-							onMouseDown={(e) => {
-								e.stopPropagation();
-								isScrubbingRef.current = true;
-								const next = Math.max(0, getSecFromClientX(e.clientX));
-								onTimeChange(next);
-							}}
-						/>
-						{timeline.tracks.map((track) => (
-							<div key={track.id} className="relative h-12 border-b border-neutral-900 select-none">
-								{track.clips.map((clip) => {
-									const clipStart = (clip.start / safeDuration) * width;
-									const clipEnd = (clip.end / safeDuration) * width;
-									const clipWidth = Math.max(clipEnd - clipStart, 6);
-									const baseBg =
-										track.kind === "audio"
-											? "bg-emerald-900/60"
-											: track.kind === "text"
-												? "bg-purple-900/60"
-												: "bg-blue-900/60";
-									return (
-										<div
-											key={clip.id}
-											className={`absolute top-1 flex h-9 items-center justify-between border px-2 text-[12px] text-neutral-100 ${baseBg} ${
-												selectedClipId === clip.id
-													? "border-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.8)]"
-													: "border-neutral-800"
-											}`}
-											style={{ left: clipStart, width: clipWidth }}
-											onClick={(e) => {
-												e.stopPropagation();
-												onSelectClip(clip.id);
-											}}
-											onMouseDown={(e) => {
-												e.stopPropagation();
-												isDraggingRef.current = true;
-												dragStateRef.current = {
-													clipId: clip.id,
-													trackId: track.id,
-													startOffsetSec: getSecFromClientX(e.clientX) - clip.start,
-													duration: clip.end - clip.start,
-												};
-											}}
-										>
-											<span className="truncate">{clip.id}</span>
-											<span>{(clip.end - clip.start).toFixed(1)}s</span>
-										</div>
-									);
-								})}
-							</div>
-						))}
+							className="sticky top-0 z-20 flex h-[36px] items-center border-b border-neutral-800 bg-neutral-900"
+							style={{ width }}
+						>
+							{markers.map((value) => {
+								const markWidth = rulerStep * (width / safeDuration);
+								return (
+									<div
+										key={value}
+										className="flex h-[36px] items-center border-r border-neutral-800 pl-1 text-[11px] text-neutral-400 select-none"
+										style={{ width: markWidth }}
+									>
+										{value}s
+									</div>
+								);
+							})}
+						</div>
+						<div
+							className="relative min-w-[800px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+							style={{ width, minHeight: timelineContentHeight }}
+						>
+							<div
+								className="absolute top-0 bottom-0 z-10 w-[2px] bg-rose-500/50"
+								style={{ left: `${playheadLeft}px`, cursor: "ew-resize" }}
+								onMouseDown={(e) => {
+									e.stopPropagation();
+									isScrubbingRef.current = true;
+									const next = Math.max(0, getSecFromClientX(e.clientX));
+									onTimeChange(next);
+								}}
+							/>
+							{timeline.tracks.map((track) => (
+								<div
+									key={track.id}
+									className="relative h-12 border-b border-neutral-900 select-none"
+								>
+									{track.clips.map((clip) => {
+										const clipStart = (clip.start / safeDuration) * width;
+										const clipEnd = (clip.end / safeDuration) * width;
+										const clipWidth = Math.max(clipEnd - clipStart, 6);
+										const baseBg =
+											track.kind === "audio"
+												? "bg-emerald-900/60"
+												: track.kind === "text"
+													? "bg-purple-900/60"
+													: "bg-blue-900/60";
+										return (
+											<div
+												key={clip.id}
+												className={`absolute top-1.5 flex h-9 items-center justify-between border px-2 text-[12px] text-neutral-100 ${baseBg} ${
+													selectedClipId === clip.id
+														? "border-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.8)]"
+														: "border-neutral-800"
+												}`}
+												style={{ left: clipStart, width: clipWidth }}
+												onClick={(e) => {
+													e.stopPropagation();
+													onSelectClip(clip.id);
+												}}
+												onMouseDown={(e) => {
+													e.stopPropagation();
+													isDraggingRef.current = true;
+													dragStateRef.current = {
+														clipId: clip.id,
+														trackId: track.id,
+														startOffsetSec: getSecFromClientX(e.clientX) - clip.start,
+														duration: clip.end - clip.start,
+													};
+												}}
+											>
+												<span className="truncate">{clip.id}</span>
+												<span>{(clip.end - clip.start).toFixed(1)}s</span>
+											</div>
+										);
+									})}
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>
