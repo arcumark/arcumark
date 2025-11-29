@@ -605,8 +605,8 @@ export default function EditorPage() {
 										clips: track.clips.map((clip) => {
 											if (clip.id !== clipId) return clip;
 											const duration = clip.end - clip.start;
-											let nextStart = Math.max(0, start);
-											let nextEnd = nextStart + duration;
+											const nextStart = Math.max(0, start);
+											const nextEnd = nextStart + duration;
 											if (nextEnd > nextDuration) {
 												nextDuration = Math.ceil(nextEnd + 1);
 											}
@@ -618,7 +618,7 @@ export default function EditorPage() {
 							});
 						}}
 						onDropMedia={({ dataTransfer, seconds }) => {
-							let startTime = Math.max(0, seconds);
+							const startTime = Math.max(0, seconds);
 							const mediaId = dataTransfer.getData(MEDIA_DRAG_TYPE);
 							if (mediaId) {
 								const item = mediaItems.find((m) => m.id === mediaId);

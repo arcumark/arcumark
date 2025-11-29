@@ -46,7 +46,7 @@ export default function ExportPage() {
 			const data = (await res.json()) as { ok?: boolean; errors?: string[]; advices?: string[] };
 			setLoading(false);
 			return { status: res.status, data };
-		} catch (e) {
+		} catch {
 			setLoading(false);
 			setValidationResult("Request failed");
 			return null;
