@@ -15,7 +15,12 @@ function PresetSkeleton(props: { keyIndex: number }) {
 			}`}
 		>
 			<div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-200">
-				<input type="radio" name="preset" className="accent-blue-500" defaultChecked={props.keyIndex === 0} />
+				<input
+					type="radio"
+					name="preset"
+					className="accent-blue-500"
+					defaultChecked={props.keyIndex === 0}
+				/>
 				<div className="h-5 w-32 animate-pulse bg-neutral-700 text-sm" />
 			</div>
 			<div className="h-4 w-36 animate-pulse bg-neutral-700 text-sm" />

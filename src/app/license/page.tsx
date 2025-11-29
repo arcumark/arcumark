@@ -34,10 +34,10 @@ export default function LicensePage() {
 			<div className="grid w-full max-w-3xl gap-6 border border-neutral-800 bg-neutral-900 p-8">
 				<div className="space-y-2">
 					<div className="text-3xl font-bold">License</div>
-					<div className="text-base text-neutral-400 mb-4">
+					<div className="mb-4 text-base text-neutral-400">
 						Arcumark is licensed under the MIT License.
 					</div>
-					<div className="whitespace-pre-wrap text-sm text-neutral-200 font-mono p-4 bg-neutral-800">
+					<div className="bg-neutral-800 p-4 font-mono text-sm whitespace-pre-wrap text-neutral-200">
 						{license}
 					</div>
 				</div>
