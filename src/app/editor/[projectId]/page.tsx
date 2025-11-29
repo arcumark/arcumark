@@ -542,7 +542,7 @@ export default function EditorPage() {
 				}}
 				onLoopToggle={() => setLoop((p) => !p)}
 			/>
-			<div className="flex flex-1 flex-col gap-2 p-2">
+			<div className="flex flex-1 flex-col gap-2 overflow-hidden p-2">
 				<div className="flex min-h-[320px] gap-2" style={{ height: topHeight }}>
 					<div
 						className="flex flex-col border border-neutral-800 bg-neutral-900"
@@ -656,7 +656,7 @@ export default function EditorPage() {
 					className="flex flex-col gap-2"
 					style={{ height: `calc(100vh - ${topHeight}px - 84px)` }}
 				>
-					<div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-300">
+					<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 text-xs text-neutral-300">
 						<div className="flex items-center gap-2">
 							<button
 								className="border border-neutral-700 bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-100 transition hover:bg-neutral-700"
@@ -729,65 +729,67 @@ export default function EditorPage() {
 							</label>
 						</div>
 					</div>
-					<TimelineView
-						timeline={timeline}
-						selectedClipId={selectedClipId}
-						currentTime={currentTime}
-						zoom={zoom}
-						snapEnabled={snapEnabled}
-						onToggleSnap={setSnapEnabled}
-						onTimeChange={(time) => setCurrentTime(time)}
-						onSelectClip={(id) => setSelectedClipId(id)}
-						onMoveClip={(clipId, trackId, start) => {
-							setTimeline((prev) => {
-								let nextDuration = prev.duration;
-								const nextTracks = prev.tracks.map((track) => {
-									if (track.id !== trackId) return track;
-									return {
-										...track,
-										clips: track.clips.map((clip) => {
-											if (clip.id !== clipId) return clip;
-											const duration = clip.end - clip.start;
-											const nextStart = Math.max(0, start);
-											const nextEnd = nextStart + duration;
-											if (nextEnd > nextDuration) {
-												nextDuration = Math.ceil(nextEnd + 1);
-											}
-											return { ...clip, start: nextStart, end: nextEnd };
-										}),
-									};
+					<div className="min-h-0 flex-1">
+						<TimelineView
+							timeline={timeline}
+							selectedClipId={selectedClipId}
+							currentTime={currentTime}
+							zoom={zoom}
+							snapEnabled={snapEnabled}
+							onToggleSnap={setSnapEnabled}
+							onTimeChange={(time) => setCurrentTime(time)}
+							onSelectClip={(id) => setSelectedClipId(id)}
+							onMoveClip={(clipId, trackId, start) => {
+								setTimeline((prev) => {
+									let nextDuration = prev.duration;
+									const nextTracks = prev.tracks.map((track) => {
+										if (track.id !== trackId) return track;
+										return {
+											...track,
+											clips: track.clips.map((clip) => {
+												if (clip.id !== clipId) return clip;
+												const duration = clip.end - clip.start;
+												const nextStart = Math.max(0, start);
+												const nextEnd = nextStart + duration;
+												if (nextEnd > nextDuration) {
+													nextDuration = Math.ceil(nextEnd + 1);
+												}
+												return { ...clip, start: nextStart, end: nextEnd };
+											}),
+										};
+									});
+									return { ...prev, duration: nextDuration, tracks: nextTracks };
 								});
-								return { ...prev, duration: nextDuration, tracks: nextTracks };
-							});
-						}}
-						onDropMedia={({ dataTransfer, seconds }) => {
-							const startTime = Math.max(0, seconds);
-							const mediaId = dataTransfer.getData(MEDIA_DRAG_TYPE);
-							if (mediaId) {
-								const item = mediaItems.find((m) => m.id === mediaId);
-								if (item) {
-									handleAddClipFromMedia(item, startTime);
-									return;
+							}}
+							onDropMedia={({ dataTransfer, seconds }) => {
+								const startTime = Math.max(0, seconds);
+								const mediaId = dataTransfer.getData(MEDIA_DRAG_TYPE);
+								if (mediaId) {
+									const item = mediaItems.find((m) => m.id === mediaId);
+									if (item) {
+										handleAddClipFromMedia(item, startTime);
+										return;
+									}
 								}
-							}
-							const files = dataTransfer.files;
-							if (files && files.length > 0) {
-								handleImportMedia(files, { autoAdd: true, startTime });
-							}
-						}}
-						onDeleteClip={(clipId) => {
-							setTimeline((prev) => {
-								const nextTracks = prev.tracks.map((track) => ({
-									...track,
-									clips: track.clips.filter((c) => c.id !== clipId),
-								}));
-								return { ...prev, tracks: nextTracks };
-							});
-							if (selectedClipId === clipId) {
-								setSelectedClipId(null);
-							}
-						}}
-					/>
+								const files = dataTransfer.files;
+								if (files && files.length > 0) {
+									handleImportMedia(files, { autoAdd: true, startTime });
+								}
+							}}
+							onDeleteClip={(clipId) => {
+								setTimeline((prev) => {
+									const nextTracks = prev.tracks.map((track) => ({
+										...track,
+										clips: track.clips.filter((c) => c.id !== clipId),
+									}));
+									return { ...prev, tracks: nextTracks };
+								});
+								if (selectedClipId === clipId) {
+									setSelectedClipId(null);
+								}
+							}}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

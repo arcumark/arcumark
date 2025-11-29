@@ -186,8 +186,8 @@ export function TimelineView({
 
 	return (
 		<div className="flex h-full flex-col border border-neutral-800 bg-neutral-900">
-			<div className="grid h-full grid-cols-[160px_1fr] overflow-hidden">
-				<div className="sticky left-0 flex min-h-0 flex-col border-r border-neutral-800 bg-neutral-900">
+			<div className="grid flex-1 grid-cols-[160px_1fr] overflow-hidden">
+				<div className="sticky left-0 flex h-full min-h-0 flex-col border-r border-neutral-800 bg-neutral-900">
 					<div className="flex h-[36px] items-center justify-between border-b border-neutral-800 pr-2 pl-3 text-[11px] text-neutral-400">
 						<span className="text-neutral-200">Ruler</span>
 						<label className="flex items-center gap-1 text-[11px] text-neutral-300 select-none">
@@ -260,13 +260,13 @@ export function TimelineView({
 						</div>
 					</div>
 				</div>
-				<div className="relative h-full overflow-hidden bg-neutral-950">
+				<div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
 					<div
 						ref={(el) => {
 							rightScrollRef.current = el;
 							canvasRef.current = el;
 						}}
-						className="h-full overflow-auto"
+						className="flex-1 overflow-auto"
 						onScroll={(e) => {
 							if (leftScrollRef.current) {
 								leftScrollRef.current.scrollTop = (e.currentTarget as HTMLDivElement).scrollTop;
