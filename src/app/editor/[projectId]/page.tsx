@@ -170,6 +170,7 @@ export default function EditorPage() {
 	const [rightWidth, setRightWidth] = useState(MIN_RIGHT + 60);
 	const [topHeight, setTopHeight] = useState(MIN_TOP + 140);
 	const [isLoading, setIsLoading] = useState(true);
+	const [snapEnabled, setSnapEnabled] = useState(true);
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
 		startX: number;
@@ -617,6 +618,8 @@ export default function EditorPage() {
 						selectedClipId={selectedClipId}
 						currentTime={currentTime}
 						zoom={zoom}
+						snapEnabled={snapEnabled}
+						onToggleSnap={setSnapEnabled}
 						onTimeChange={(time) => setCurrentTime(time)}
 						onSelectClip={(id) => setSelectedClipId(id)}
 						onMoveClip={(clipId, trackId, start) => {

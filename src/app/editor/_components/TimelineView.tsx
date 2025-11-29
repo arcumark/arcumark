@@ -12,6 +12,8 @@ type Props = {
 	onSelectClip: (clipId: string) => void;
 	onMoveClip: (clipId: string, trackId: string, start: number) => void;
 	onDropMedia: (payload: { dataTransfer: DataTransfer; seconds: number; trackId?: string }) => void;
+	snapEnabled: boolean;
+	onToggleSnap: (enabled: boolean) => void;
 };
 
 function trackBadgeClass(kind: Track["kind"]) {
@@ -29,6 +31,8 @@ export function TimelineView({
 	onSelectClip,
 	onMoveClip,
 	onDropMedia,
+	snapEnabled,
+	onToggleSnap,
 }: Props) {
 	const [muteState, setMuteState] = useState<Record<string, boolean>>({});
 	const [soloState, setSoloState] = useState<Record<string, boolean>>({});
@@ -99,7 +103,11 @@ export function TimelineView({
 			if (!isDraggingRef.current) return;
 			const { clipId, trackId, startOffsetSec } = dragStateRef.current;
 			const sec = getSecFromClientX(event.clientX);
-			const nextStart = Math.max(0, sec - startOffsetSec);
+			let nextStart = Math.max(0, sec - startOffsetSec);
+			if (snapEnabled) {
+				const snapStep = 0.5;
+				nextStart = Math.round(nextStart / snapStep) * snapStep;
+			}
 			onMoveClip(clipId, trackId, nextStart);
 		};
 		const handleUp = () => {
@@ -117,8 +125,18 @@ export function TimelineView({
 		<div className="flex h-full flex-col border border-neutral-800 bg-neutral-900">
 			<div className="grid h-full grid-cols-[160px_1fr] overflow-hidden">
 				<div className="sticky left-0 flex min-h-0 flex-col border-r border-neutral-800 bg-neutral-900">
-					<div className="flex h-[28px] items-center border-b border-neutral-800 pl-3 text-[11px] text-neutral-400">
-						Ruler
+					<div className="flex h-[36px] items-center justify-between border-b border-neutral-800 pr-2 pl-3 text-[11px] text-neutral-400">
+						<span className="text-neutral-200">Ruler</span>
+						<label className="flex items-center gap-1 text-[11px] text-neutral-300 select-none">
+							<input
+								type="checkbox"
+								className="accent-blue-500"
+								checked={snapEnabled}
+								onChange={(e) => onToggleSnap(e.target.checked)}
+								aria-label="Toggle snap to grid"
+							/>
+							Snap
+						</label>
 					</div>
 					<div className="grid auto-rows-[48px]">
 						{timeline.tracks.map((track) => (
