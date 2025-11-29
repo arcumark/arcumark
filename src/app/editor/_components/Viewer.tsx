@@ -85,15 +85,15 @@ export function Viewer({
 			video.load();
 		}
 		const clipOffset = activeClip ? Math.max(0, currentTime - activeClip.start) : 0;
-		if (!Number.isNaN(clipOffset) && Math.abs(video.currentTime - clipOffset) > 0.05) {
+		if (!Number.isNaN(clipOffset) && Math.abs(video.currentTime - clipOffset) > 0.1) {
 			video.currentTime = clipOffset;
 		}
-		if (isPlaying) {
-			video.play().catch(() => {
-				// ignore play errors (e.g. autoplay restrictions)
-			});
-		} else {
+		if (!isPlaying) {
 			video.pause();
+		} else if (video.paused) {
+			video.play().catch(() => {
+				/* ignore play errors */
+			});
 		}
 	}, [activeSource?.url, activeClip, currentTime, isPlaying]);
 
@@ -113,7 +113,7 @@ export function Viewer({
 			audio.load();
 		}
 		const clipOffset = Math.max(0, currentTime - activeAudioClip.start);
-		if (!Number.isNaN(clipOffset) && Math.abs(audio.currentTime - clipOffset) > 0.05) {
+		if (!Number.isNaN(clipOffset) && Math.abs(audio.currentTime - clipOffset) > 0.1) {
 			audio.currentTime = clipOffset;
 		}
 		const volume =
@@ -121,12 +121,12 @@ export function Viewer({
 				? Math.min(1, Math.max(0, activeAudioClip.props.volume / 100))
 				: 1;
 		audio.volume = volume;
-		if (isPlaying) {
-			audio.play().catch(() => {
-				// ignore play errors
-			});
-		} else {
+		if (!isPlaying) {
 			audio.pause();
+		} else if (audio.paused) {
+			audio.play().catch(() => {
+				/* ignore play errors */
+			});
 		}
 	}, [activeAudioSource?.url, activeAudioClip, currentTime, isPlaying]);
 
