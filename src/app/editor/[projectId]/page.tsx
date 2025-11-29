@@ -171,6 +171,7 @@ export default function EditorPage() {
 	const [topHeight, setTopHeight] = useState(MIN_TOP + 140);
 	const [isLoading, setIsLoading] = useState(true);
 	const [snapEnabled, setSnapEnabled] = useState(true);
+	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort">("select");
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
 		startX: number;
@@ -588,13 +589,29 @@ export default function EditorPage() {
 								duration={timeline.duration}
 								isPlaying={isPlaying}
 								zoom={zoom}
-								presetOptions={VIDEO_PRESETS.map((p) => ({ id: p.id, name: p.name }))}
+								presetOptions={VIDEO_PRESETS}
 								activePresetId={activePresetId}
 								activeClip={activeVideoClip}
 								activeSource={activeVideoSource}
 								activeAudioClip={activeAudioClip}
 								activeAudioSource={activeAudioSource}
 								activeTextClip={activeTextClip}
+								selectedClipId={selectedClipId}
+								selectedClipKind={selectedClipKind}
+								editMode={editMode}
+								onAdjustClip={(clipId, props) => {
+									setTimeline((prev) => {
+										const nextTracks = prev.tracks.map((track) => ({
+											...track,
+											clips: track.clips.map((clip) =>
+												clip.id === clipId
+													? { ...clip, props: { ...(clip.props || {}), ...props } }
+													: clip
+											),
+										}));
+										return { ...prev, tracks: nextTracks };
+									});
+								}}
 								onScrub={(time) => setCurrentTime(time)}
 								onZoomChange={setZoom}
 								onPresetChange={(id) => setActivePresetId(id)}
@@ -649,54 +666,76 @@ export default function EditorPage() {
 					className="flex flex-col gap-2"
 					style={{ height: `calc(100vh - ${topHeight}px - 84px)` }}
 				>
-					<div className="flex items-center justify-between text-xs text-neutral-300">
-						<button
-							className="border border-neutral-700 bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-100 transition hover:bg-neutral-700"
-							onClick={() => {
-								setTimeline((prev) => {
-									let nextTracks = [...prev.tracks];
-									let trackIndex = nextTracks.findIndex((t) => t.kind === "text");
-									if (trackIndex === -1) {
-										nextTracks = [
-											...nextTracks,
-											{ id: `t${nextTracks.length + 1}`, kind: "text", clips: [] },
-										];
-										trackIndex = nextTracks.length - 1;
-									}
-									const track = nextTracks[trackIndex];
-									const start = currentTime;
-									const duration = 3;
-									const end = start + duration;
-									let nextDuration = prev.duration;
-									if (end > prev.duration) {
-										nextDuration = Math.ceil(end + 1);
-									}
-									const clipId = `text_${Date.now()}`;
-									const newClip: Clip = {
-										id: clipId,
-										start,
-										end,
-										sourceId: "text",
-										props: {
-											name: "Text",
-											text: "Your text",
-											font: "Inter",
-											size: 24,
-											x: 50,
-											y: 50,
-											color: "#ffffff",
-										},
-									};
-									const updatedTrack: typeof track = { ...track, clips: [...track.clips, newClip] };
-									nextTracks[trackIndex] = updatedTrack;
-									setSelectedClipId(clipId);
-									return { ...prev, duration: nextDuration, tracks: nextTracks };
-								});
-							}}
-						>
-							Add text clip
-						</button>
-						<div />
+					<div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-300">
+						<div className="flex items-center gap-2">
+							<button
+								className="border border-neutral-700 bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-100 transition hover:bg-neutral-700"
+								onClick={() => {
+									setTimeline((prev) => {
+										let nextTracks = [...prev.tracks];
+										let trackIndex = nextTracks.findIndex((t) => t.kind === "text");
+										if (trackIndex === -1) {
+											nextTracks = [
+												...nextTracks,
+												{ id: `t${nextTracks.length + 1}`, kind: "text", clips: [] },
+											];
+											trackIndex = nextTracks.length - 1;
+										}
+										const track = nextTracks[trackIndex];
+										const start = currentTime;
+										const duration = 3;
+										const end = start + duration;
+										let nextDuration = prev.duration;
+										if (end > prev.duration) {
+											nextDuration = Math.ceil(end + 1);
+										}
+										const clipId = `text_${Date.now()}`;
+										const newClip: Clip = {
+											id: clipId,
+											start,
+											end,
+											sourceId: "text",
+											props: {
+												name: "Text",
+												text: "Your text",
+												font: "Inter",
+												size: 24,
+												x: 50,
+												y: 50,
+												color: "#ffffff",
+												rotation: 0,
+												lineHeight: 1.2,
+												letterSpacing: 0,
+												anchorX: "center",
+												anchorY: "center",
+											},
+										};
+										const updatedTrack: typeof track = {
+											...track,
+											clips: [...track.clips, newClip],
+										};
+										nextTracks[trackIndex] = updatedTrack;
+										setSelectedClipId(clipId);
+										return { ...prev, duration: nextDuration, tracks: nextTracks };
+									});
+								}}
+							>
+								Add text clip
+							</button>
+							<label className="flex items-center gap-1 text-[11px] text-neutral-300 select-none">
+								<span className="text-neutral-200">Mode</span>
+								<select
+									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-xs text-neutral-50"
+									value={editMode}
+									onChange={(e) => setEditMode(e.target.value as typeof editMode)}
+								>
+									<option value="select">Select</option>
+									<option value="transform">Transform</option>
+									<option value="crop">Crop</option>
+									<option value="distort">Distort</option>
+								</select>
+							</label>
+						</div>
 					</div>
 					<TimelineView
 						timeline={timeline}
