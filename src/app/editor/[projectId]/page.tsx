@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { VIDEO_PRESETS } from "@/lib/shared/presets";
-import { Clip, Timeline, validateTimeline } from "@/lib/shared/timeline";
+import { Clip, Timeline, Track, validateTimeline } from "@/lib/shared/timeline";
 import { TopBar } from "../_components/TopBar";
 import { MediaBrowser, MediaItem, MEDIA_DRAG_TYPE } from "../_components/MediaBrowser";
 import { Viewer } from "../_components/Viewer";
@@ -275,6 +275,15 @@ export default function EditorPage() {
 		return null;
 	}, [timeline.tracks, selectedClipId]);
 
+	const selectedClipKind = useMemo<Track["kind"] | null>(() => {
+		if (!selectedClipId) return null;
+		for (const track of timeline.tracks) {
+			const clip = track.clips.find((c) => c.id === selectedClipId);
+			if (clip) return track.kind;
+		}
+		return null;
+	}, [selectedClipId, timeline.tracks]);
+
 	const handleClipChange = (clipId: string, changes: Partial<Clip>) => {
 		setTimeline((prev) => {
 			const nextTracks = prev.tracks.map((track) => {
@@ -321,6 +330,14 @@ export default function EditorPage() {
 		if (!activeAudioClip) return null;
 		return mediaItems.find((m) => m.id === activeAudioClip.sourceId && m.type === "audio") ?? null;
 	}, [mediaItems, activeAudioClip]);
+
+	const activeTextClip = useMemo(() => {
+		const textTrack = timeline.tracks.find((t) => t.kind === "text");
+		if (!textTrack) return null;
+		return (
+			textTrack.clips.find((clip) => currentTime >= clip.start && currentTime <= clip.end) ?? null
+		);
+	}, [timeline.tracks, currentTime]);
 
 	useEffect(() => {
 		const handleMove = (e: MouseEvent) => {
@@ -577,6 +594,7 @@ export default function EditorPage() {
 								activeSource={activeVideoSource}
 								activeAudioClip={activeAudioClip}
 								activeAudioSource={activeAudioSource}
+								activeTextClip={activeTextClip}
 								onScrub={(time) => setCurrentTime(time)}
 								onZoomChange={setZoom}
 								onPresetChange={(id) => setActivePresetId(id)}
@@ -607,6 +625,7 @@ export default function EditorPage() {
 						<div className="flex flex-1 overflow-hidden">
 							<Inspector
 								clip={selectedClip}
+								clipKind={selectedClipKind}
 								onChange={(changes) => selectedClip && handleClipChange(selectedClip.id, changes)}
 							/>
 						</div>
@@ -630,6 +649,55 @@ export default function EditorPage() {
 					className="flex flex-col gap-2"
 					style={{ height: `calc(100vh - ${topHeight}px - 84px)` }}
 				>
+					<div className="flex items-center justify-between text-xs text-neutral-300">
+						<button
+							className="border border-neutral-700 bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-100 transition hover:bg-neutral-700"
+							onClick={() => {
+								setTimeline((prev) => {
+									let nextTracks = [...prev.tracks];
+									let trackIndex = nextTracks.findIndex((t) => t.kind === "text");
+									if (trackIndex === -1) {
+										nextTracks = [
+											...nextTracks,
+											{ id: `t${nextTracks.length + 1}`, kind: "text", clips: [] },
+										];
+										trackIndex = nextTracks.length - 1;
+									}
+									const track = nextTracks[trackIndex];
+									const start = currentTime;
+									const duration = 3;
+									const end = start + duration;
+									let nextDuration = prev.duration;
+									if (end > prev.duration) {
+										nextDuration = Math.ceil(end + 1);
+									}
+									const clipId = `text_${Date.now()}`;
+									const newClip: Clip = {
+										id: clipId,
+										start,
+										end,
+										sourceId: "text",
+										props: {
+											name: "Text",
+											text: "Your text",
+											font: "Inter",
+											size: 24,
+											x: 50,
+											y: 50,
+											color: "#ffffff",
+										},
+									};
+									const updatedTrack: typeof track = { ...track, clips: [...track.clips, newClip] };
+									nextTracks[trackIndex] = updatedTrack;
+									setSelectedClipId(clipId);
+									return { ...prev, duration: nextDuration, tracks: nextTracks };
+								});
+							}}
+						>
+							Add text clip
+						</button>
+						<div />
+					</div>
 					<TimelineView
 						timeline={timeline}
 						selectedClipId={selectedClipId}

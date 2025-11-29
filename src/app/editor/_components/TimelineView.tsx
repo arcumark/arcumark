@@ -118,6 +118,13 @@ export function TimelineView({
 		};
 		const handleKey = (event: KeyboardEvent) => {
 			if (!selectedClipId) return;
+			const target = event.target as HTMLElement | null;
+			if (target) {
+				const tag = target.tagName.toLowerCase();
+				if (tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable) {
+					return;
+				}
+			}
 			if (event.key === "Delete" || event.key === "Backspace") {
 				onDeleteClip(selectedClipId);
 			}

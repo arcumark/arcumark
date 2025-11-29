@@ -17,6 +17,7 @@ type Props = {
 	activeSource: MediaItem | null;
 	activeAudioClip: Clip | null;
 	activeAudioSource: MediaItem | null;
+	activeTextClip: Clip | null;
 	onScrub: (time: number) => void;
 	onZoomChange: (value: number) => void;
 	onPresetChange?: (id: string) => void;
@@ -50,6 +51,7 @@ export function Viewer({
 	activeSource,
 	activeAudioClip,
 	activeAudioSource,
+	activeTextClip,
 	onScrub,
 	onZoomChange,
 	onPresetChange,
@@ -158,6 +160,93 @@ export function Viewer({
 						) : (
 							<div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">
 								Import a video and add it to the timeline to preview.
+							</div>
+						)}
+						{activeTextClip && (
+							<div
+								className="pointer-events-none absolute"
+								style={{
+									left: `${typeof activeTextClip.props?.x === "number" ? activeTextClip.props.x : 50}%`,
+									top: `${typeof activeTextClip.props?.y === "number" ? activeTextClip.props.y : 50}%`,
+									transform: `translate(-50%, -50%) rotate(${typeof activeTextClip.props?.rotation === "number" ? activeTextClip.props.rotation : 0}deg)`,
+									transformOrigin: `${typeof activeTextClip.props?.anchorX === "string" ? activeTextClip.props.anchorX : "center"} ${typeof activeTextClip.props?.anchorY === "string" ? activeTextClip.props.anchorY : "center"}`,
+									textAlign:
+										typeof activeTextClip.props?.align === "string"
+											? (activeTextClip.props.align as
+													| "left"
+													| "center"
+													| "right"
+													| "justify"
+													| "start"
+													| "end"
+													| undefined)
+											: "center",
+									lineHeight:
+										typeof activeTextClip.props?.lineHeight === "number"
+											? activeTextClip.props.lineHeight
+											: 1.2,
+									letterSpacing:
+										typeof activeTextClip.props?.letterSpacing === "number"
+											? `${activeTextClip.props.letterSpacing}px`
+											: "0px",
+									whiteSpace: "pre-wrap",
+								}}
+							>
+								<div className="relative inline-block">
+									{typeof activeTextClip.props?.strokeWidth === "number" &&
+										typeof activeTextClip.props?.strokeColor === "string" &&
+										activeTextClip.props.strokeWidth > 0 && (
+											<span
+												aria-hidden
+												className="pointer-events-none absolute inset-0 select-none"
+												style={{
+													color:
+														typeof activeTextClip.props?.strokeColor === "string"
+															? (activeTextClip.props.strokeColor as string)
+															: "#000000",
+													WebkitTextStroke: `${activeTextClip.props.strokeWidth}px ${activeTextClip.props.strokeColor}`,
+													fontFamily:
+														typeof activeTextClip.props?.font === "string" &&
+														activeTextClip.props.font.length > 0
+															? (activeTextClip.props.font as string)
+															: "Inter, system-ui, sans-serif",
+													fontSize:
+														typeof activeTextClip.props?.size === "number"
+															? `${activeTextClip.props.size}px`
+															: "24px",
+												}}
+											>
+												{typeof activeTextClip.props?.text === "string" &&
+												activeTextClip.props.text.length > 0
+													? (activeTextClip.props.text as string)
+													: "Text"}
+											</span>
+										)}
+									<span
+										className="relative z-10"
+										style={{
+											color:
+												typeof activeTextClip.props?.color === "string" &&
+												activeTextClip.props.color.length > 0
+													? (activeTextClip.props.color as string)
+													: "#ffffff",
+											fontFamily:
+												typeof activeTextClip.props?.font === "string" &&
+												activeTextClip.props.font.length > 0
+													? (activeTextClip.props.font as string)
+													: "Inter, system-ui, sans-serif",
+											fontSize:
+												typeof activeTextClip.props?.size === "number"
+													? `${activeTextClip.props.size}px`
+													: "24px",
+										}}
+									>
+										{typeof activeTextClip.props?.text === "string" &&
+										activeTextClip.props.text.length > 0
+											? (activeTextClip.props.text as string)
+											: "Text"}
+									</span>
+								</div>
 							</div>
 						)}
 						<div className="absolute top-2 right-2 border border-neutral-800 bg-neutral-900/80 px-2 py-1 font-mono text-xs text-neutral-100">
