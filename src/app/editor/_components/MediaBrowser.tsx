@@ -113,12 +113,14 @@ export function MediaBrowser({ items, onImport }: Props) {
 												<div className="flex h-12 w-14 items-center justify-center border border-neutral-800 bg-neutral-900 text-base text-neutral-300">
 													{item.icon}
 												</div>
-												<div className="flex flex-col gap-1">
-													<div className="flex items-center justify-between">
-														<div className="text-sm font-semibold text-neutral-100">
+												<div className="flex min-w-0 flex-col gap-1">
+													<div className="flex items-center justify-between gap-2">
+														<div className="truncate text-sm font-semibold text-neutral-100">
 															{item.name}
 														</div>
-														<div className="text-xs text-neutral-400">{item.durationLabel}</div>
+														<div className="flex-none text-xs text-neutral-400">
+															{item.durationLabel}
+														</div>
 													</div>
 													<div className="text-[11px] text-neutral-400">Type: {item.type}</div>
 												</div>
@@ -159,13 +161,15 @@ export function MediaBrowser({ items, onImport }: Props) {
 														e.dataTransfer.effectAllowed = "copy";
 													}}
 												>
-													<div className="flex h-12 w-12 items-center justify-center border border-neutral-800 bg-neutral-900 text-lg text-neutral-300">
-														{item.icon}
+													<div className="flex h-12 w-12 items-center justify-center overflow-hidden border border-neutral-800 bg-neutral-900 text-lg text-neutral-300">
+														<span className="truncate text-lg">{item.icon}</span>
 													</div>
-													<div className="truncate text-center text-xs text-neutral-200">
+													<div className="w-full truncate text-center text-xs text-neutral-200">
 														{item.name}
 													</div>
-													<div className="text-[11px] text-neutral-400">{item.durationLabel}</div>
+													<div className="w-full truncate text-center text-[11px] text-neutral-400">
+														{item.durationLabel}
+													</div>
 												</div>
 											))}
 										</div>
