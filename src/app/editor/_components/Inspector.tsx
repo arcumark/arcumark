@@ -56,20 +56,20 @@ export function Inspector({ clip, onChange }: Props) {
 				</div>
 				<div className="text-sm font-semibold text-neutral-200">Timing</div>
 				<div className="grid grid-cols-2 gap-3">
-					<div className="grid gap-2">
+					<div className="grid min-w-0 gap-2">
 						<label className="text-xs text-neutral-400">Start (s)</label>
 						<input
-							className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+							className="w-full border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
 							type="number"
 							step="0.1"
 							value={clip.start}
 							onChange={(e) => onChange({ start: Math.max(0, parseFloat(e.target.value) || 0) })}
 						/>
 					</div>
-					<div className="grid gap-2">
+					<div className="grid min-w-0 gap-2">
 						<label className="text-xs text-neutral-400">End (s)</label>
 						<input
-							className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+							className="w-full border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
 							type="number"
 							step="0.1"
 							value={clip.end}
