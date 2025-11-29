@@ -84,8 +84,9 @@ export function TimelineView({
 			const ratio = (event.clientX - rect.left + canvasRef.current.scrollLeft) / width;
 			const next = Math.max(0, Math.min(1, ratio)) * safeDuration;
 			onTimeChange(next);
+			onSelectClip("");
 		},
-		[onTimeChange, safeDuration, width]
+		[onTimeChange, onSelectClip, safeDuration, width]
 	);
 
 	const getSecFromClientX = useCallback(
@@ -150,24 +151,30 @@ export function TimelineView({
 								</div>
 								<div className="flex gap-1">
 									<button
-										className={`border px-2 py-1 text-[11px] transition ${muteState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"}`}
+										className={`border px-2 py-1 text-[11px] transition ${muteState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+										disabled={!selectedClipId}
 										onClick={() =>
+											selectedClipId &&
 											setMuteState((prev) => ({ ...prev, [track.id]: !prev[track.id] }))
 										}
 									>
 										M
 									</button>
 									<button
-										className={`border px-2 py-1 text-[11px] transition ${soloState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"}`}
+										className={`border px-2 py-1 text-[11px] transition ${soloState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+										disabled={!selectedClipId}
 										onClick={() =>
+											selectedClipId &&
 											setSoloState((prev) => ({ ...prev, [track.id]: !prev[track.id] }))
 										}
 									>
 										S
 									</button>
 									<button
-										className={`border px-2 py-1 text-[11px] transition ${visibilityState[track.id] === false ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"}`}
+										className={`border px-2 py-1 text-[11px] transition ${visibilityState[track.id] === false ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+										disabled={!selectedClipId}
 										onClick={() =>
+											selectedClipId &&
 											setVisibilityState((prev) => ({
 												...prev,
 												[track.id]: prev[track.id] === false ? true : false,
