@@ -59,6 +59,7 @@ export function Viewer({
 	const scrubRef = useRef<HTMLDivElement | null>(null);
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const scrubbingRef = useRef(false);
 
 	const handleScrub = useCallback(
 		(event: React.MouseEvent<HTMLDivElement>) => {
@@ -70,6 +71,25 @@ export function Viewer({
 		},
 		[duration, onScrub]
 	);
+
+	useEffect(() => {
+		const handleMove = (event: MouseEvent) => {
+			if (!scrubbingRef.current || !scrubRef.current || duration <= 0) return;
+			const rect = scrubRef.current.getBoundingClientRect();
+			const ratio = (event.clientX - rect.left) / rect.width;
+			const next = Math.max(0, Math.min(1, ratio)) * duration;
+			onScrub(next);
+		};
+		const handleUp = () => {
+			scrubbingRef.current = false;
+		};
+		window.addEventListener("mousemove", handleMove);
+		window.addEventListener("mouseup", handleUp);
+		return () => {
+			window.removeEventListener("mousemove", handleMove);
+			window.removeEventListener("mouseup", handleUp);
+		};
+	}, [duration, onScrub]);
 
 	useEffect(() => {
 		const video = videoRef.current;
@@ -258,6 +278,10 @@ export function Viewer({
 					className="relative h-6 flex-none cursor-pointer border border-neutral-800 bg-neutral-900"
 					ref={scrubRef}
 					onClick={handleScrub}
+					onMouseDown={(e) => {
+						scrubbingRef.current = true;
+						handleScrub(e);
+					}}
 				>
 					<div className="absolute top-1/2 right-0 left-0 h-[2px] -translate-y-1/2 bg-neutral-700" />
 					<div
