@@ -61,6 +61,37 @@ export function TimelineView({
 
 	const safeDuration = Math.max(0.001, timeline.duration);
 
+	const snapPoints = useMemo(() => {
+		const pts = new Set<number>();
+		pts.add(0);
+		pts.add(safeDuration);
+		for (const track of timeline.tracks) {
+			for (const clip of track.clips) {
+				pts.add(clip.start);
+				pts.add(clip.end);
+			}
+		}
+		return Array.from(pts).sort((a, b) => a - b);
+	}, [safeDuration, timeline.tracks]);
+
+	const snapTime = useCallback(
+		(sec: number) => {
+			if (!snapEnabled) return sec;
+			let best = Math.round(sec / 0.5) * 0.5;
+			let bestDiff = Math.abs(best - sec);
+			const threshold = 0.25;
+			for (const p of snapPoints) {
+				const diff = Math.abs(p - sec);
+				if (diff < threshold && diff < bestDiff) {
+					best = p;
+					bestDiff = diff;
+				}
+			}
+			return Math.max(0, best);
+		},
+		[snapEnabled, snapPoints]
+	);
+
 	const width = useMemo(() => {
 		const base = safeDuration * 40 * zoom;
 		return Math.max(base, 1200);
@@ -106,11 +137,7 @@ export function TimelineView({
 			if (!isDraggingRef.current) return;
 			const { clipId, trackId, startOffsetSec } = dragStateRef.current;
 			const sec = getSecFromClientX(event.clientX);
-			let nextStart = Math.max(0, sec - startOffsetSec);
-			if (snapEnabled) {
-				const snapStep = 0.5;
-				nextStart = Math.round(nextStart / snapStep) * snapStep;
-			}
+			const nextStart = snapTime(Math.max(0, sec - startOffsetSec));
 			onMoveClip(clipId, trackId, nextStart);
 		};
 		const handleUp = () => {
@@ -137,7 +164,7 @@ export function TimelineView({
 			window.removeEventListener("mouseup", handleUp);
 			window.removeEventListener("keydown", handleKey);
 		};
-	}, [getSecFromClientX, onDeleteClip, onMoveClip, selectedClipId, snapEnabled]);
+	}, [getSecFromClientX, onDeleteClip, onMoveClip, selectedClipId, snapEnabled, snapTime]);
 
 	return (
 		<div className="flex h-full flex-col border border-neutral-800 bg-neutral-900">
@@ -216,7 +243,10 @@ export function TimelineView({
 					onDrop={(e) => {
 						e.preventDefault();
 						if (e.dataTransfer) {
-							onDropMedia({ dataTransfer: e.dataTransfer, seconds: getSecFromClientX(e.clientX) });
+							onDropMedia({
+								dataTransfer: e.dataTransfer,
+								seconds: snapTime(getSecFromClientX(e.clientX)),
+							});
 						}
 					}}
 				>
