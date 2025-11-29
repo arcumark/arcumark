@@ -19,6 +19,12 @@ const MIN_RIGHT = 300;
 const MIN_TOP = 400;
 const MIN_TIMELINE = 200;
 
+function nextTrackId(kind: Track["kind"], tracks: Track[]) {
+	const prefix = kind === "video" ? "V" : kind === "audio" ? "A" : "T";
+	const count = tracks.filter((t) => t.kind === kind).length + 1;
+	return `${prefix}${count}`;
+}
+
 type StoredMediaRecord = {
 	id: string;
 	name: string;
@@ -132,23 +138,7 @@ function createDefaultTimeline(projectId: string): Timeline {
 		id: projectId,
 		name: "Project",
 		duration: 60,
-		tracks: [
-			{
-				id: "v1",
-				kind: "video",
-				clips: [],
-			},
-			{
-				id: "a1",
-				kind: "audio",
-				clips: [],
-			},
-			{
-				id: "t1",
-				kind: "text",
-				clips: [],
-			},
-		],
+		tracks: [],
 	};
 }
 
@@ -481,9 +471,9 @@ export default function EditorPage() {
 		const targetKind = item.type === "audio" ? "audio" : "video";
 		setTimeline((prev) => {
 			let nextTracks = [...prev.tracks];
-			let trackIndex = nextTracks.findIndex((t) => t.kind === targetKind);
+			let trackIndex = nextTracks.findIndex((t) => t.kind === targetKind && t.clips.length === 0);
 			if (trackIndex === -1) {
-				const newTrackId = `${targetKind[0]}${nextTracks.length + 1}`;
+				const newTrackId = nextTrackId(targetKind, nextTracks);
 				nextTracks = [...nextTracks, { id: newTrackId, kind: targetKind, clips: [] }];
 				trackIndex = nextTracks.length - 1;
 			}
@@ -673,11 +663,13 @@ export default function EditorPage() {
 								onClick={() => {
 									setTimeline((prev) => {
 										let nextTracks = [...prev.tracks];
-										let trackIndex = nextTracks.findIndex((t) => t.kind === "text");
+										let trackIndex = nextTracks.findIndex(
+											(t) => t.kind === "text" && t.clips.length === 0
+										);
 										if (trackIndex === -1) {
 											nextTracks = [
 												...nextTracks,
-												{ id: `t${nextTracks.length + 1}`, kind: "text", clips: [] },
+												{ id: nextTrackId("text", nextTracks), kind: "text", clips: [] },
 											];
 											trackIndex = nextTracks.length - 1;
 										}
