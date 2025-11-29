@@ -12,7 +12,8 @@
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
+		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@opennextjs/cloudflare": "^1.11.0",
@@ -22,6 +23,8 @@
 		"react-dom": "19.1.0"
 	},
 	"devDependencies": {
+		"@commitlint/cli": "^20.1.0",
+		"@commitlint/config-conventional": "^20.0.0",
 		"@eslint/eslintrc": "^3",
 		"@tailwindcss/postcss": "^4",
 		"@types/node": "^20",
@@ -29,6 +32,7 @@
 		"@types/react-dom": "^19",
 		"eslint": "^9",
 		"eslint-config-next": "15.4.6",
+		"husky": "^9.1.7",
 		"prettier": "^3.7.1",
 		"prettier-plugin-tailwindcss": "^0.7.1",
 		"tailwindcss": "^4",
