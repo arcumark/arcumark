@@ -90,7 +90,7 @@ export default function Home() {
 					<button
 						onClick={handleNewProject}
 						disabled={loading}
-						className="flex items-center gap-2 border border-blue-700 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+						className="flex cursor-pointer items-center gap-2 border border-blue-700 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
 					>
 						New Project
 					</button>
