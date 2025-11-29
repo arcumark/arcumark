@@ -34,6 +34,17 @@ function mediaIcon(kind: MediaItem["type"]) {
 	return <VideoIcon className="h-4 w-4 text-neutral-300" aria-hidden />;
 }
 
+function LoadingScreen() {
+	return (
+		<div className="flex min-h-screen items-center justify-center bg-neutral-950 text-neutral-200">
+			<div className="flex items-center gap-3 text-sm">
+				<div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+				<span>Loading workspace…</span>
+			</div>
+		</div>
+	);
+}
+
 function openMediaDb(): Promise<IDBDatabase | null> {
 	if (typeof indexedDB === "undefined") return Promise.resolve(null);
 	return new Promise((resolve, reject) => {
@@ -155,9 +166,10 @@ export default function EditorPage() {
 	const [zoom, setZoom] = useState(1.2);
 	const [activePresetId, setActivePresetId] = useState<string | null>(presetParam);
 	const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
-	const [leftWidth, setLeftWidth] = useState(260);
-	const [rightWidth, setRightWidth] = useState(260);
-	const [topHeight, setTopHeight] = useState(400);
+	const [leftWidth, setLeftWidth] = useState(MIN_LEFT + 60);
+	const [rightWidth, setRightWidth] = useState(MIN_RIGHT + 60);
+	const [topHeight, setTopHeight] = useState(MIN_TOP + 140);
+	const [isLoading, setIsLoading] = useState(true);
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
 		startX: number;
@@ -170,6 +182,14 @@ export default function EditorPage() {
 	useEffect(() => {
 		setActivePresetId((prev) => prev ?? presetParam ?? VIDEO_PRESETS[0]?.id ?? null);
 	}, [presetParam]);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		setLeftWidth(Math.max(MIN_LEFT, Math.floor(window.innerWidth * 0.2)));
+		setRightWidth(Math.max(MIN_RIGHT, Math.floor(window.innerWidth * 0.2)));
+		setTopHeight(Math.max(MIN_TOP, Math.floor(window.innerHeight * 0.5)));
+		setIsLoading(false);
+	}, []);
 
 	useEffect(() => {
 		const key = `arcumark:timeline:${projectId}`;
@@ -474,6 +494,10 @@ export default function EditorPage() {
 			setCurrentTime(newClipStart);
 		}
 	};
+
+	if (isLoading) {
+		return <LoadingScreen />;
+	}
 
 	return (
 		<div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-50">
