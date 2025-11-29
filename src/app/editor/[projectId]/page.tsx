@@ -193,6 +193,23 @@ export default function EditorPage() {
 	}, []);
 
 	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handleKey = (e: KeyboardEvent) => {
+			if (e.code !== "Space") return;
+			const target = e.target as HTMLElement | null;
+			if (target) {
+				const tag = target.tagName.toLowerCase();
+				if (tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable)
+					return;
+			}
+			e.preventDefault();
+			setIsPlaying((prev) => !prev);
+		};
+		window.addEventListener("keydown", handleKey);
+		return () => window.removeEventListener("keydown", handleKey);
+	}, []);
+
+	useEffect(() => {
 		const key = `arcumark:timeline:${projectId}`;
 		try {
 			const stored = localStorage.getItem(key);
