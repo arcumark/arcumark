@@ -14,6 +14,7 @@ type Props = {
 	onDropMedia: (payload: { dataTransfer: DataTransfer; seconds: number; trackId?: string }) => void;
 	snapEnabled: boolean;
 	onToggleSnap: (enabled: boolean) => void;
+	onDeleteClip: (clipId: string) => void;
 };
 
 function trackBadgeClass(kind: Track["kind"]) {
@@ -33,6 +34,7 @@ export function TimelineView({
 	onDropMedia,
 	snapEnabled,
 	onToggleSnap,
+	onDeleteClip,
 }: Props) {
 	const [muteState, setMuteState] = useState<Record<string, boolean>>({});
 	const [soloState, setSoloState] = useState<Record<string, boolean>>({});
@@ -114,13 +116,21 @@ export function TimelineView({
 		const handleUp = () => {
 			isDraggingRef.current = false;
 		};
+		const handleKey = (event: KeyboardEvent) => {
+			if (!selectedClipId) return;
+			if (event.key === "Delete" || event.key === "Backspace") {
+				onDeleteClip(selectedClipId);
+			}
+		};
 		window.addEventListener("mousemove", handleMove);
 		window.addEventListener("mouseup", handleUp);
+		window.addEventListener("keydown", handleKey);
 		return () => {
 			window.removeEventListener("mousemove", handleMove);
 			window.removeEventListener("mouseup", handleUp);
+			window.removeEventListener("keydown", handleKey);
 		};
-	}, [getSecFromClientX, onMoveClip]);
+	}, [getSecFromClientX, onDeleteClip, onMoveClip, selectedClipId, snapEnabled]);
 
 	return (
 		<div className="flex h-full flex-col border border-neutral-800 bg-neutral-900">

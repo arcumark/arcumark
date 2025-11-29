@@ -659,6 +659,18 @@ export default function EditorPage() {
 								handleImportMedia(files, { autoAdd: true, startTime });
 							}
 						}}
+						onDeleteClip={(clipId) => {
+							setTimeline((prev) => {
+								const nextTracks = prev.tracks.map((track) => ({
+									...track,
+									clips: track.clips.filter((c) => c.id !== clipId),
+								}));
+								return { ...prev, tracks: nextTracks };
+							});
+							if (selectedClipId === clipId) {
+								setSelectedClipId(null);
+							}
+						}}
 					/>
 				</div>
 			</div>
