@@ -68,13 +68,13 @@ export default function ProjectsPage() {
 							<div className="text-xs break-all text-neutral-400">{project.id}</div>
 							<div className="flex gap-2">
 								<button
-									className="flex-1 border border-blue-700 bg-blue-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
+									className="flex-1 cursor-pointer border border-blue-700 bg-blue-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
 									onClick={() => handleOpen(project.id)}
 								>
 									Open
 								</button>
 								<button
-									className="border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-semibold text-neutral-200 transition hover:bg-neutral-700"
+									className="cursor-pointer border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-semibold text-neutral-200 transition hover:bg-neutral-700"
 									onClick={() => handleDelete(project.id)}
 								>
 									Delete
