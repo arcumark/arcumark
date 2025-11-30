@@ -810,23 +810,68 @@ export default function EditorPage() {
 							onMoveClip={(clipId, trackId, start) => {
 								setTimeline((prev) => {
 									let nextDuration = prev.duration;
-									const nextTracks = prev.tracks.map((track) => {
-										if (track.id !== trackId) return track;
-										return {
-											...track,
-											clips: track.clips.map((clip) => {
-												if (clip.id !== clipId) return clip;
-												const duration = clip.end - clip.start;
-												const nextStart = Math.max(0, start);
-												const nextEnd = nextStart + duration;
-												if (nextEnd > nextDuration) {
-													nextDuration = Math.ceil(nextEnd + 1);
-												}
-												return { ...clip, start: nextStart, end: nextEnd };
-											}),
-										};
+									let movingClip: Clip | null = null;
+									let sourceTrackId: string | null = null;
+									let sourceKind: Track["kind"] | null = null;
+
+									// remove clip from source track
+									let workingTracks = prev.tracks.map((track) => {
+										const filtered = track.clips.filter((clip) => {
+											if (clip.id === clipId) {
+												movingClip = clip;
+												sourceTrackId = track.id;
+												sourceKind = track.kind;
+												return false;
+											}
+											return true;
+										});
+										return { ...track, clips: filtered };
 									});
-									return { ...prev, duration: nextDuration, tracks: nextTracks };
+
+									if (!movingClip || !sourceKind) return prev;
+
+									const targetIndex = workingTracks.findIndex((t) => t.id === trackId);
+									if (targetIndex === -1) {
+										// restore original position
+										return prev;
+									}
+
+									const targetTrack = workingTracks[targetIndex];
+									if (targetTrack.kind !== sourceKind) {
+										return prev;
+									}
+
+									const duration = (movingClip as Clip).end - (movingClip as Clip).start;
+									const nextStart = Math.max(0, start);
+									let nextEnd = nextStart + duration;
+									if (nextEnd > nextDuration) {
+										nextDuration = Math.ceil(nextEnd + 1);
+									}
+									if (nextEnd > nextDuration) {
+										nextEnd = nextDuration;
+									}
+
+									const overlap = targetTrack.clips.some(
+										(clip) => nextStart < clip.end && nextEnd > clip.start
+									);
+									if (overlap) {
+										return prev;
+									}
+
+									const updatedClip: Clip = {
+										...(movingClip as Clip),
+										start: nextStart,
+										end: nextEnd,
+									};
+									workingTracks[targetIndex] = {
+										...targetTrack,
+										clips: [...targetTrack.clips, updatedClip],
+									};
+
+									// remove any empty tracks
+									workingTracks = workingTracks.filter((t) => t.clips.length > 0);
+
+									return { ...prev, duration: nextDuration, tracks: workingTracks };
 								});
 							}}
 							onDropMedia={({ dataTransfer, seconds }) => {

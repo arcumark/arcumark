@@ -43,6 +43,10 @@ export function TimelineView({
 	const rightScrollRef = useRef<HTMLDivElement | null>(null);
 	const canvasRef = useRef<HTMLDivElement | null>(null);
 	const trackHeight = 48;
+	const headerHeight = 36;
+	const [preview, setPreview] = useState<{ trackId: string; left: number; width: number } | null>(
+		null
+	);
 	const timelineContentHeight = useMemo(
 		() => timeline.tracks.length * trackHeight,
 		[timeline.tracks.length, trackHeight]
@@ -138,13 +142,41 @@ export function TimelineView({
 		const handleMove = (event: MouseEvent) => {
 			if (!isDraggingRef.current) return;
 			const { clipId, trackId, startOffsetSec } = dragStateRef.current;
+			if (!canvasRef.current) return;
+			const rect = canvasRef.current.getBoundingClientRect();
+			const scrollTop = canvasRef.current.scrollTop;
+			const y = event.clientY - rect.top + scrollTop - headerHeight;
+			const targetIndex = Math.floor(y / trackHeight);
+			if (targetIndex < 0 || targetIndex >= timeline.tracks.length) {
+				setPreview(null);
+				return;
+			}
+			const targetTrack = timeline.tracks[targetIndex];
+			const originTrack = timeline.tracks.find((t) => t.id === trackId);
+			if (!originTrack || targetTrack.kind !== originTrack.kind) {
+				setPreview(null);
+				return;
+			}
 			const sec = getSecFromClientX(event.clientX);
 			const nextStart = snapTime(Math.max(0, sec - startOffsetSec));
-			onMoveClip(clipId, trackId, nextStart);
+			const duration = dragStateRef.current.duration;
+			const nextEnd = nextStart + duration;
+			const overlap = targetTrack.clips
+				.filter((c) => c.id !== clipId)
+				.some((c) => nextStart < c.end && nextEnd > c.start);
+			if (overlap) {
+				setPreview(null);
+				return;
+			}
+			const nextLeft = (nextStart / safeDuration) * width;
+			const nextWidth = Math.max((duration / safeDuration) * width, 6);
+			setPreview({ trackId: targetTrack.id, left: nextLeft, width: nextWidth });
+			onMoveClip(clipId, targetTrack.id, nextStart);
 		};
 		const handleUp = () => {
 			isDraggingRef.current = false;
 			isScrubbingRef.current = false;
+			setPreview(null);
 		};
 		const handleKey = (event: KeyboardEvent) => {
 			if (!selectedClipId) return;
@@ -329,6 +361,13 @@ export function TimelineView({
 									key={track.id}
 									className="relative h-12 border-b border-neutral-900 select-none"
 								>
+									{preview?.trackId === track.id && (
+										<div
+											className="absolute top-1 h-9 border border-dashed border-blue-400/70 bg-blue-500/10"
+											style={{ left: preview.left, width: preview.width }}
+											aria-hidden
+										/>
+									)}
 									{track.clips.map((clip) => {
 										const clipStart = (clip.start / safeDuration) * width;
 										const clipEnd = (clip.end / safeDuration) * width;
