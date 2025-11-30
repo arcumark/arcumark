@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageShell } from "../../components/PageShell";
 
 export const metadata: Metadata = {
 	title: "License",
@@ -30,18 +31,10 @@ SOFTWARE.
 
 export default function LicensePage() {
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 py-12 text-neutral-50">
-			<div className="grid w-full max-w-3xl gap-6 border border-neutral-800 bg-neutral-900 p-8">
-				<div className="space-y-2">
-					<div className="text-3xl font-bold">License</div>
-					<div className="mb-4 text-base text-neutral-400">
-						Arcumark is licensed under the MIT License.
-					</div>
-					<div className="bg-neutral-800 p-4 font-mono text-sm whitespace-pre-wrap text-neutral-200">
-						{license}
-					</div>
-				</div>
+		<PageShell title="License" description="Arcumark is licensed under the MIT License.">
+			<div className="bg-neutral-800 p-4 font-mono text-sm whitespace-pre-wrap text-neutral-200">
+				{license}
 			</div>
-		</div>
+		</PageShell>
 	);
 }
