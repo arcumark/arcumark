@@ -846,10 +846,12 @@ export default function EditorPage() {
 							}}
 							onDeleteClip={(clipId) => {
 								setTimeline((prev) => {
-									const nextTracks = prev.tracks.map((track) => ({
-										...track,
-										clips: track.clips.filter((c) => c.id !== clipId),
-									}));
+									const nextTracks = prev.tracks
+										.map((track) => ({
+											...track,
+											clips: track.clips.filter((c) => c.id !== clipId),
+										}))
+										.filter((track) => track.clips.length > 0);
 									return { ...prev, tracks: nextTracks };
 								});
 								if (selectedClipId === clipId) {
