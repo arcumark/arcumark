@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { VideoPreset } from "@/lib/shared/presets";
 import { createProjectId } from "@/lib/utils/id";
-import { PageShell } from "../components/PageShell";
+import { PageShell } from "@/components/PageShell";
 
 const skeletonBaseClasses = "bg-arcumark-skeleton bg-[length:160%_100%] animate-arcumark-skeleton";
 
@@ -84,13 +84,21 @@ export default function Home() {
 			description="Crafting visual traces and impressions in the browser."
 		>
 			<div className="flex flex-wrap items-center gap-3">
-				<button
-					onClick={handleNewProject}
-					disabled={loading}
-					className="flex cursor-pointer items-center gap-2 border border-blue-700 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-				>
-					New Project
-				</button>
+				<div className="flex flex-wrap items-center gap-2">
+					<button
+						onClick={handleNewProject}
+						disabled={loading}
+						className="flex cursor-pointer items-center gap-2 border border-blue-700 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+					>
+						New Project
+					</button>
+					<button
+						onClick={() => router.push("/projects")}
+						className="flex cursor-pointer items-center gap-2 border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-100 transition hover:bg-neutral-700"
+					>
+						View Projects
+					</button>
+				</div>
 				{loading ? (
 					<div className={`h-4 w-40 ${skeletonBaseClasses}`} />
 				) : selectedPreset ? (
