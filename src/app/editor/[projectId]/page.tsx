@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { VIDEO_PRESETS } from "@/lib/shared/presets";
 import { Clip, Timeline, Track, validateTimeline } from "@/lib/shared/timeline";
@@ -162,6 +162,7 @@ export default function EditorPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [snapEnabled, setSnapEnabled] = useState(true);
 	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort">("select");
+	const clipboardRef = useRef<{ clip: Clip; kind: Track["kind"] } | null>(null);
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
 		startX: number;
@@ -181,23 +182,6 @@ export default function EditorPage() {
 		setRightWidth(Math.max(MIN_RIGHT, Math.floor(window.innerWidth * 0.2)));
 		setTopHeight(Math.max(MIN_TOP, Math.floor(window.innerHeight * 0.5)));
 		setIsLoading(false);
-	}, []);
-
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		const handleKey = (e: KeyboardEvent) => {
-			if (e.code !== "Space") return;
-			const target = e.target as HTMLElement | null;
-			if (target) {
-				const tag = target.tagName.toLowerCase();
-				if (tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable)
-					return;
-			}
-			e.preventDefault();
-			setIsPlaying((prev) => !prev);
-		};
-		window.addEventListener("keydown", handleKey);
-		return () => window.removeEventListener("keydown", handleKey);
 	}, []);
 
 	useEffect(() => {
@@ -520,6 +504,90 @@ export default function EditorPage() {
 			setCurrentTime(newClipStart);
 		}
 	};
+
+	const handlePasteClip = useCallback(() => {
+		const data = clipboardRef.current;
+		if (!data) return;
+		const duration = Math.max(0.05, data.clip.end - data.clip.start);
+		let createdId: string | null = null;
+		let createdStart = currentTime;
+		setTimeline((prev) => {
+			let nextTracks = [...prev.tracks];
+			let trackIndex = nextTracks.findIndex((t) => t.kind === data.kind && t.clips.length === 0);
+			if (trackIndex === -1) {
+				const newTrackId = nextTrackId(data.kind, nextTracks);
+				nextTracks = [...nextTracks, { id: newTrackId, kind: data.kind, clips: [] }];
+				trackIndex = nextTracks.length - 1;
+			}
+			const track = nextTracks[trackIndex];
+			const start = Math.max(0, currentTime);
+			let end = start + duration;
+			let nextDuration = prev.duration;
+			if (end > prev.duration) {
+				nextDuration = Math.ceil(end + 1);
+			}
+			if (end > nextDuration) {
+				end = nextDuration;
+			}
+			const newClip: Clip = {
+				...data.clip,
+				id: `${data.clip.id}_copy_${Date.now()}`,
+				start,
+				end,
+				props: data.clip.props ? { ...data.clip.props } : undefined,
+			};
+			createdId = newClip.id;
+			createdStart = start;
+			nextTracks[trackIndex] = { ...track, clips: [...track.clips, newClip] };
+			return { ...prev, duration: nextDuration, tracks: nextTracks };
+		});
+		if (createdId) {
+			setSelectedClipId(createdId);
+			setCurrentTime(createdStart);
+		}
+	}, [currentTime]);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handleKey = (e: KeyboardEvent) => {
+			// Play/pause with Space
+			if (e.code === "Space") {
+				const target = e.target as HTMLElement | null;
+				if (target) {
+					const tag = target.tagName.toLowerCase();
+					if (tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable)
+						return;
+				}
+				e.preventDefault();
+				setIsPlaying((prev) => !prev);
+			}
+			// Copy selected clip
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c") {
+				if (selectedClip && selectedClipKind) {
+					clipboardRef.current = {
+						clip: {
+							...selectedClip,
+							props: selectedClip.props ? { ...selectedClip.props } : undefined,
+						},
+						kind: selectedClipKind,
+					};
+				}
+			}
+			// Paste clip
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") {
+				const target = e.target as HTMLElement | null;
+				if (target) {
+					const tag = target.tagName.toLowerCase();
+					if (tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable)
+						return;
+				}
+				e.preventDefault();
+				handlePasteClip();
+			}
+		};
+		window.addEventListener("keydown", handleKey);
+		return () => window.removeEventListener("keydown", handleKey);
+	}, [handlePasteClip, selectedClip, selectedClipKind]);
 
 	if (isLoading) {
 		return <LoadingScreen />;
