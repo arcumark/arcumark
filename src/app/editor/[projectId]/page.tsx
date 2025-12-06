@@ -102,6 +102,7 @@ export default function EditorPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [snapEnabled, setSnapEnabled] = useState(true);
 	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort">("select");
+	const [isPortrait, setIsPortrait] = useState(false);
 	const clipboardRef = useRef<{ clip: Clip; kind: Track["kind"] } | null>(null);
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
@@ -118,10 +119,18 @@ export default function EditorPage() {
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		setLeftWidth(Math.max(MIN_LEFT, Math.floor(window.innerWidth * 0.2)));
-		setRightWidth(Math.max(MIN_RIGHT, Math.floor(window.innerWidth * 0.2)));
-		setTopHeight(Math.max(MIN_TOP, Math.floor(window.innerHeight * 0.5)));
+		const updateOrientation = () => {
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+			setIsPortrait(vh > vw);
+			setLeftWidth((prev) => Math.max(MIN_LEFT, Math.min(prev, Math.floor(vw * 0.4))));
+			setRightWidth((prev) => Math.max(MIN_RIGHT, Math.min(prev, Math.floor(vw * 0.4))));
+			setTopHeight(Math.max(MIN_TOP, Math.floor(vh * 0.5)));
+		};
+		updateOrientation();
+		window.addEventListener("resize", updateOrientation);
 		setIsLoading(false);
+		return () => window.removeEventListener("resize", updateOrientation);
 	}, []);
 
 	useEffect(() => {
@@ -552,10 +561,13 @@ export default function EditorPage() {
 				onLoopToggle={() => setLoop((p) => !p)}
 			/>
 			<div className="flex flex-1 flex-col gap-2 overflow-hidden p-2">
-				<div className="flex min-h-[320px] gap-2" style={{ height: topHeight }}>
+				<div
+					className={`flex min-h-[320px] gap-2 ${isPortrait ? "flex-col" : ""}`}
+					style={{ height: isPortrait ? undefined : topHeight }}
+				>
 					<div
 						className="flex flex-col border border-neutral-800 bg-neutral-900"
-						style={{ width: leftWidth, minWidth: MIN_LEFT }}
+						style={isPortrait ? undefined : { width: leftWidth, minWidth: MIN_LEFT }}
 					>
 						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-sm font-semibold text-neutral-100 select-none">
 							Library
@@ -564,21 +576,26 @@ export default function EditorPage() {
 							<MediaBrowser items={mediaItems} onImport={handleImportMedia} />
 						</div>
 					</div>
+					{!isPortrait && (
+						<div
+							className="w-1 cursor-col-resize bg-neutral-800/70 transition hover:bg-blue-500/60"
+							onMouseDown={(e) => {
+								e.preventDefault();
+								dragState.current = {
+									type: "left",
+									startX: e.clientX,
+									startY: e.clientY,
+									startLeft: leftWidth,
+									startRight: rightWidth,
+									startTop: topHeight,
+								};
+							}}
+						/>
+					)}
 					<div
-						className="w-1 cursor-col-resize bg-neutral-800/70 transition hover:bg-blue-500/60"
-						onMouseDown={(e) => {
-							e.preventDefault();
-							dragState.current = {
-								type: "left",
-								startX: e.clientX,
-								startY: e.clientY,
-								startLeft: leftWidth,
-								startRight: rightWidth,
-								startTop: topHeight,
-							};
-						}}
-					/>
-					<div className="flex flex-1 flex-col border border-neutral-800 bg-neutral-900">
+						className="flex flex-1 flex-col border border-neutral-800 bg-neutral-900"
+						style={isPortrait ? { minHeight: 300 } : undefined}
+					>
 						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-sm font-semibold text-neutral-100 select-none">
 							Viewer
 						</div>
@@ -615,23 +632,25 @@ export default function EditorPage() {
 							/>
 						</div>
 					</div>
-					<div
-						className="w-1 cursor-col-resize bg-neutral-800/70 transition hover:bg-blue-500/60"
-						onMouseDown={(e) => {
-							e.preventDefault();
-							dragState.current = {
-								type: "right",
-								startX: e.clientX,
-								startY: e.clientY,
-								startLeft: leftWidth,
-								startRight: rightWidth,
-								startTop: topHeight,
-							};
-						}}
-					/>
+					{!isPortrait && (
+						<div
+							className="w-1 cursor-col-resize bg-neutral-800/70 transition hover:bg-blue-500/60"
+							onMouseDown={(e) => {
+								e.preventDefault();
+								dragState.current = {
+									type: "right",
+									startX: e.clientX,
+									startY: e.clientY,
+									startLeft: leftWidth,
+									startRight: rightWidth,
+									startTop: topHeight,
+								};
+							}}
+						/>
+					)}
 					<div
 						className="flex flex-col border border-neutral-800 bg-neutral-900"
-						style={{ width: rightWidth, minWidth: MIN_RIGHT }}
+						style={isPortrait ? undefined : { width: rightWidth, minWidth: MIN_RIGHT }}
 					>
 						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-sm font-semibold text-neutral-100 select-none">
 							Inspector
