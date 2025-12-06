@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import {
+	readAllMediaRecords,
+	saveMediaRecord,
+	updateMediaDuration,
+} from "@/lib/client/media-store";
 import { VIDEO_PRESETS } from "@/lib/shared/presets";
 import { Clip, Timeline, Track, validateTimeline } from "@/lib/shared/timeline";
 import { TopBar } from "../_components/TopBar";
@@ -11,9 +16,6 @@ import { Inspector } from "../_components/Inspector";
 import { TimelineView } from "../_components/TimelineView";
 import { VideoIcon, ImageIcon, MusicIcon } from "lucide-react";
 
-const DB_NAME = "arcumark-media";
-const DB_VERSION = 1;
-const MEDIA_STORE = "media";
 const MIN_LEFT = 300;
 const MIN_RIGHT = 300;
 const MIN_TOP = 400;
@@ -24,15 +26,6 @@ function nextTrackId(kind: Track["kind"], tracks: Track[]) {
 	const count = tracks.filter((t) => t.kind === kind).length + 1;
 	return `${prefix}${count}`;
 }
-
-type StoredMediaRecord = {
-	id: string;
-	name: string;
-	type: MediaItem["type"];
-	icon: MediaItem["type"];
-	durationSeconds: number;
-	blob: Blob;
-};
 
 function mediaIcon(kind: MediaItem["type"]) {
 	if (kind === "audio") return <MusicIcon className="h-4 w-4 text-neutral-300" aria-hidden />;
@@ -49,60 +42,6 @@ function LoadingScreen() {
 			</div>
 		</div>
 	);
-}
-
-function openMediaDb(): Promise<IDBDatabase | null> {
-	if (typeof indexedDB === "undefined") return Promise.resolve(null);
-	return new Promise((resolve, reject) => {
-		const request = indexedDB.open(DB_NAME, DB_VERSION);
-		request.onupgradeneeded = () => {
-			const db = request.result;
-			if (!db.objectStoreNames.contains(MEDIA_STORE)) {
-				db.createObjectStore(MEDIA_STORE, { keyPath: "id" });
-			}
-		};
-		request.onsuccess = () => resolve(request.result);
-		request.onerror = () => reject(request.error);
-	});
-}
-
-async function saveMediaRecord(record: StoredMediaRecord) {
-	const db = await openMediaDb();
-	if (!db) return;
-	return new Promise<void>((resolve, reject) => {
-		const tx = db.transaction(MEDIA_STORE, "readwrite");
-		tx.objectStore(MEDIA_STORE).put(record);
-		tx.oncomplete = () => resolve();
-		tx.onerror = () => reject(tx.error);
-	});
-}
-
-async function readAllMediaRecords(): Promise<StoredMediaRecord[]> {
-	const db = await openMediaDb();
-	if (!db) return [];
-	return new Promise((resolve, reject) => {
-		const tx = db.transaction(MEDIA_STORE, "readonly");
-		const req = tx.objectStore(MEDIA_STORE).getAll();
-		req.onsuccess = () => resolve((req.result as StoredMediaRecord[]) ?? []);
-		req.onerror = () => reject(req.error);
-	});
-}
-
-async function updateMediaDuration(id: string, durationSeconds: number) {
-	const db = await openMediaDb();
-	if (!db) return;
-	return new Promise<void>((resolve, reject) => {
-		const tx = db.transaction(MEDIA_STORE, "readwrite");
-		const store = tx.objectStore(MEDIA_STORE);
-		const getReq = store.get(id);
-		getReq.onsuccess = () => {
-			const record = getReq.result as StoredMediaRecord | undefined;
-			if (!record) return resolve();
-			store.put({ ...record, durationSeconds });
-			tx.oncomplete = () => resolve();
-		};
-		tx.onerror = () => reject(tx.error);
-	});
 }
 
 function formatTimecode(time: number) {
@@ -144,6 +83,7 @@ function createDefaultTimeline(projectId: string): Timeline {
 
 export default function EditorPage() {
 	const params = useParams<{ projectId: string }>();
+	const router = useRouter();
 	const searchParams = useSearchParams();
 	const projectId = params.projectId;
 	const presetParam = searchParams?.get("preset");
@@ -600,6 +540,7 @@ export default function EditorPage() {
 				isPlaying={isPlaying}
 				loop={loop}
 				timecode={formatTimecode(currentTime)}
+				onExport={() => router.push(`/export/${projectId}`)}
 				onPlayToggle={() => setIsPlaying((p) => !p)}
 				onStop={() => {
 					setIsPlaying(false);
@@ -662,9 +603,7 @@ export default function EditorPage() {
 										const nextTracks = prev.tracks.map((track) => ({
 											...track,
 											clips: track.clips.map((clip) =>
-												clip.id === clipId
-													? { ...clip, props: { ...(clip.props || {}), ...props } }
-													: clip
+												clip.id === clipId ? { ...clip, props: { ...clip.props, ...props } } : clip
 											),
 										}));
 										return { ...prev, tracks: nextTracks };
@@ -811,7 +750,6 @@ export default function EditorPage() {
 								setTimeline((prev) => {
 									let nextDuration = prev.duration;
 									let movingClip: Clip | null = null;
-									let sourceTrackId: string | null = null;
 									let sourceKind: Track["kind"] | null = null;
 
 									// remove clip from source track
@@ -819,7 +757,6 @@ export default function EditorPage() {
 										const filtered = track.clips.filter((clip) => {
 											if (clip.id === clipId) {
 												movingClip = clip;
-												sourceTrackId = track.id;
 												sourceKind = track.kind;
 												return false;
 											}

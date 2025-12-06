@@ -5,6 +5,7 @@ type Props = {
 	isPlaying: boolean;
 	loop: boolean;
 	timecode: string;
+	onExport: () => void;
 	onPlayToggle: () => void;
 	onStop: () => void;
 	onStep: (delta: number) => void;
@@ -16,6 +17,7 @@ export function TopBar({
 	isPlaying,
 	loop,
 	timecode,
+	onExport,
 	onPlayToggle,
 	onStop,
 	onStep,
@@ -25,6 +27,12 @@ export function TopBar({
 		<div className="flex h-12 items-center gap-3 border-b border-neutral-800 bg-neutral-900 px-3 text-neutral-100">
 			<div className="text-base font-bold text-white">Arcumark</div>
 			<div className="text-sm text-neutral-300">{projectName}</div>
+			<button
+				className="border border-blue-700 bg-blue-500 px-3 py-1 text-xs font-semibold text-slate-950 transition hover:bg-blue-600"
+				onClick={onExport}
+			>
+				Export
+			</button>
 			<div className="flex-1" />
 			<div className="flex items-center gap-2">
 				<button

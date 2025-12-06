@@ -214,6 +214,9 @@ export function TimelineView({
 		selectedClipId,
 		snapEnabled,
 		snapTime,
+		safeDuration,
+		timeline.tracks,
+		width,
 	]);
 
 	return (
