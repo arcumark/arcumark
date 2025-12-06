@@ -1,47 +1,71 @@
-# OpenNext Starter
+# Arcumark
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Arcumark is a browser-first timeline editor for video, audio, and text overlays. Everything is local: projects are stored in `localStorage`, media in IndexedDB, and exports render to WebM in the browser via `MediaRecorder` + `Canvas` + `AudioContext`. No uploads are required.
 
-## Getting Started
+## Highlights
 
-Read the documentation at https://opennext.js.org/cloudflare.
+- Project presets: pick resolution/fps presets, auto-apply them to the viewer, and reuse the last preset.
+- Media library: import video/audio/image files into IndexedDB; durations are probed automatically for AV files.
+- Timeline editing: drag-and-drop clips per track type (video/audio/text), snapping, copy/paste, per-track badges, delete with keyboard.
+- Clip inspector: start/end, opacity/volume, text styling (font, size, stroke, anchor, alignment, rotation, line height, letter spacing).
+- Viewer tools: transform (translate), crop (inset handles), distort (corner handles), text overlay rendering.
+- Export: validate timeline, get structural advice, and render WebM locally with audio captured through `AudioContext` (muted to the user).
 
-## Develop
+## Stack
 
-Run the Next.js development server:
+- Next.js 15 (App Router), React 19
+- Tailwind utility classes (no full framework)
+- OpenNext Cloudflare tooling for preview/deploy
+
+## Project layout
+
+- `src/app` — routes (editor, export, projects, about, api routes for presets/timeline validation/advice/system health)
+- `src/components` — shared UI shell
+- `src/lib/shared` — timeline/preset types and validation
+- `src/lib/client` — browser-side utilities (IndexedDB media store)
+- `public` — static assets
+
+## Data storage
+
+- Projects: `localStorage` key `arcumark:timeline:{projectId}` (validated on load).
+- Media: IndexedDB database `arcumark-media`, store `media`; records include blob, duration, type, and name.
+- Recent preset: `localStorage` key `arcumark:lastPreset`.
+
+## Export pipeline
+
+1. Load timeline from `localStorage` and media blobs from IndexedDB.
+2. Validate timeline and optionally fetch advice via `/api/timeline/validate` and `/api/timeline/advice`.
+3. Render frames on a hidden canvas at the preset resolution/fps; draw video/image with crop/transform, then text overlays.
+4. Capture canvas video and audio (via `AudioContext` + `MediaStreamDestination`) into `MediaRecorder` as WebM (VP9/Opus when available).
+5. Provide a download URL when recording completes. Audio is muted locally but captured in the output.
+
+## Development
 
 ```bash
-npm run dev
-# or similar package manager command
+pnpm install
+pnpm dev
+# app: http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Preview
-
-Preview the application locally on the Cloudflare runtime:
+## Preview on Cloudflare (OpenNext)
 
 ```bash
-npm run preview
-# or similar package manager command
+pnpm preview
 ```
 
 ## Deploy
 
-Deploy the application to Cloudflare:
-
 ```bash
-npm run deploy
-# or similar package manager command
+pnpm deploy
 ```
 
-## Learn More
+## Environment and requirements
 
-To learn more about Next.js, take a look at the following resources:
+- Modern Chromium-based browser recommended for `MediaRecorder`, `AudioContext`, and `canvas.captureStream`.
+- Local-only storage; clearing browser data removes projects and media.
+- Audio capture depends on browser support for `MediaStreamDestination` or `captureStream`; falls back to muted export if unavailable.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Arcumark is MIT licensed. See [`LICENSE`](./LICENSE) for details.
+- Third-party notices live under `src/app/license` and `src/app/license/third-party`.
