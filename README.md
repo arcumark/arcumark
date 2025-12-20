@@ -42,21 +42,21 @@ Arcumark is a browser-first timeline editor for video, audio, and text overlays.
 ## Development
 
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun dev
 # app: http://localhost:3000
 ```
 
 ## Preview on Cloudflare (OpenNext)
 
 ```bash
-pnpm preview
+bun preview
 ```
 
 ## Deploy
 
 ```bash
-pnpm deploy
+bun deploy
 ```
 
 ## Environment and requirements
