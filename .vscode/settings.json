@@ -2,5 +2,6 @@
 	"files.associations": {
 		"wrangler.json": "jsonc",
 		"*.css": "tailwindcss"
-	}
+	},
+	"tailwindCSS.files.exclude": ["src/components/ui/**"]
 }
