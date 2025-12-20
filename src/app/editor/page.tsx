@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { PageShell } from "../../components/PageShell";
-import { createProjectId } from "@/lib/utils/id";
+import { createProjectId } from "@/lib/utils";
 
 export default function EditorIndexPage() {
 	const router = useRouter();
