@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { VideoPreset } from "@/lib/shared/presets";
-import { createProjectId } from "@/lib/utils/id";
+import { createProjectId } from "@/lib/utils";
 import { PageShell } from "@/components/PageShell";
 
 const skeletonBaseClasses = "bg-arcumark-skeleton bg-[length:160%_100%] animate-arcumark-skeleton";
