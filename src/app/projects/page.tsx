@@ -2,7 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageShell } from "@/components/PageShell";
+import { PageShell } from "@/components/page-shell";
+import { Button } from "@/components/ui/button";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
+import { CircleXIcon } from "lucide-react";
 
 type StoredProject = {
 	id: string;
@@ -54,35 +72,48 @@ export default function ProjectsPage() {
 	return (
 		<PageShell title="Projects" description="Saved projects from this browser.">
 			{projects.length === 0 ? (
-				<div className="text-sm text-neutral-400">No saved projects yet.</div>
+				<Empty className="border border-dashed">
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<CircleXIcon />
+						</EmptyMedia>
+						<EmptyTitle>No saved projects yet</EmptyTitle>
+						<EmptyDescription>Create a new project to get started.</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<Button variant="default" size="sm" onClick={() => router.push("/")}>
+							New Project
+						</Button>
+					</EmptyContent>
+				</Empty>
 			) : (
-				<div className="grid gap-3 sm:grid-cols-2">
-					{projects.map((project) => (
-						<div
-							key={project.id}
-							className="flex flex-col gap-2 border border-neutral-800 bg-neutral-900 p-4"
-						>
-							<div className="truncate text-sm font-semibold text-neutral-100" title={project.name}>
-								{project.name}
-							</div>
-							<div className="text-xs break-all text-neutral-400">{project.id}</div>
-							<div className="flex gap-2">
-								<button
-									className="flex-1 cursor-pointer border border-blue-700 bg-blue-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
-									onClick={() => handleOpen(project.id)}
-								>
-									Open
-								</button>
-								<button
-									className="cursor-pointer border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-semibold text-neutral-200 transition hover:bg-neutral-700"
-									onClick={() => handleDelete(project.id)}
-								>
-									Delete
-								</button>
-							</div>
-						</div>
-					))}
-				</div>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>Name</TableHead>
+							<TableHead>ID</TableHead>
+							<TableHead className="text-right">Actions</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{projects.map((project) => (
+							<TableRow key={project.id}>
+								<TableCell className="font-medium">{project.name}</TableCell>
+								<TableCell className="text-muted-foreground break-all">{project.id}</TableCell>
+								<TableCell className="text-right">
+									<div className="flex justify-end gap-2">
+										<Button variant="default" size="sm" onClick={() => handleOpen(project.id)}>
+											Open
+										</Button>
+										<Button variant="outline" size="sm" onClick={() => handleDelete(project.id)}>
+											Delete
+										</Button>
+									</div>
+								</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
 			)}
 		</PageShell>
 	);

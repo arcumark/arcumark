@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { UploadIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type MediaItem = {
 	id: string;
@@ -46,12 +47,9 @@ export function MediaBrowser({ items, onImport }: Props) {
 	return (
 		<div className="flex h-full flex-1 flex-col">
 			<div className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900 px-3 py-2">
-				<button
-					className="border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-semibold text-neutral-50 transition hover:bg-neutral-700"
-					onClick={() => fileInputRef.current?.click()}
-				>
+				<Button variant="outline" onClick={() => fileInputRef.current?.click()}>
 					Import
-				</button>
+				</Button>
 				<input
 					ref={fileInputRef}
 					type="file"
@@ -61,14 +59,15 @@ export function MediaBrowser({ items, onImport }: Props) {
 				/>
 				<div className="ml-auto flex gap-1">
 					{(["list", "gallery", "icon"] as const).map((mode) => (
-						<button
+						<Button
 							key={mode}
-							className={`border px-2 py-1 text-[11px] transition ${viewMode === mode ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"}`}
+							variant={viewMode === mode ? "default" : "ghost"}
+							size="xs"
 							onClick={() => setViewMode(mode)}
 							aria-label={`View as ${mode}`}
 						>
 							{mode === "list" ? "List" : mode === "gallery" ? "Grid" : "Icon"}
-						</button>
+						</Button>
 					))}
 				</div>
 			</div>

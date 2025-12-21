@@ -1,6 +1,16 @@
 import fs from "fs/promises";
 import path from "path";
 import type { Metadata } from "next";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Static generation is required for the license page to be accessible via the web
 export const dynamic = "force-static";
@@ -50,7 +60,7 @@ async function collectPackages(): Promise<PkgInfo[]> {
 		devDependencies?: Record<string, string>;
 	};
 
-	const entries = Object.entries({ ...(root.dependencies || {}), ...(root.devDependencies || {}) });
+	const entries = Object.entries({ ...root.dependencies, ...root.devDependencies });
 
 	const results: PkgInfo[] = [];
 	for (const [name, versionRange] of entries) {
@@ -76,29 +86,53 @@ export default async function ThirdPartyLicensePage() {
 
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 py-12 text-neutral-50">
-			<div className="grid w-full max-w-3xl gap-6 border border-neutral-800 bg-neutral-900 p-8">
-				<div className="space-y-2">
-					<div className="text-3xl font-bold">Third-Party Licenses</div>
-					<div className="mb-2 text-base text-neutral-400">
-						A list of third-party dependencies used by Arcumark.
-					</div>
-				</div>
-				<div className="max-h-96 space-y-2 overflow-y-auto bg-neutral-800 p-4 font-mono text-sm whitespace-pre-wrap text-neutral-200">
-					{packages.map((pkg) => (
-						<div key={pkg.name}>
-							<div>
-								{pkg.name} ({pkg.version})
-							</div>
-							<div>
-								<span className="text-neutral-400">License:</span> {pkg.license}
-							</div>
-							<div>
-								<span className="text-neutral-400">Repository:</span> {pkg.repo}
-							</div>
-						</div>
-					))}
-				</div>
-			</div>
+			<Card className="w-full max-w-3xl border border-neutral-800 bg-neutral-900">
+				<CardHeader>
+					<CardTitle>Third-Party Licenses</CardTitle>
+					<CardDescription>A list of third-party dependencies used by Arcumark.</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<ScrollArea className="grid h-[500px]">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Name</TableHead>
+									<TableHead>Version</TableHead>
+									<TableHead>License</TableHead>
+									<TableHead>Repository</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{packages.map((pkg) => (
+									<TableRow key={pkg.name}>
+										<TableCell className="font-mono font-semibold">{pkg.name}</TableCell>
+										<TableCell className="font-mono text-xs">{pkg.version}</TableCell>
+										<TableCell>{pkg.license}</TableCell>
+										<TableCell className="break-all">
+											{pkg.repo ? (
+												pkg.repo.startsWith("https") ? (
+													<a
+														href={pkg.repo}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-blue-400 hover:underline"
+													>
+														{pkg.repo}
+													</a>
+												) : (
+													<span className="text-neutral-400">{pkg.repo}</span>
+												)
+											) : (
+												<span className="text-neutral-400">N/A</span>
+											)}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</ScrollArea>
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

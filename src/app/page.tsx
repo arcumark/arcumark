@@ -4,30 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { VideoPreset } from "@/lib/shared/presets";
 import { createProjectId } from "@/lib/utils";
-import { PageShell } from "@/components/PageShell";
-
-const skeletonBaseClasses = "bg-arcumark-skeleton bg-[length:160%_100%] animate-arcumark-skeleton";
-
-function PresetSkeleton(props: { keyIndex: number }) {
-	return (
-		<label
-			className={`block cursor-pointer border-2 bg-neutral-800 p-3 transition hover:border-blue-500 ${
-				props.keyIndex === 0 ? "border-blue-500" : "border-neutral-800"
-			}`}
-		>
-			<div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-200">
-				<input
-					type="radio"
-					name="preset"
-					className="accent-blue-500"
-					defaultChecked={props.keyIndex === 0}
-				/>
-				<div className="h-5 w-32 animate-pulse bg-neutral-700 text-sm" />
-			</div>
-			<div className="h-4 w-36 animate-pulse bg-neutral-700 text-sm" />
-		</label>
-	);
-}
+import { PageShell } from "@/components/page-shell";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Field, FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
 	const router = useRouter();
@@ -85,65 +66,68 @@ export default function Home() {
 		>
 			<div className="flex flex-wrap items-center gap-3">
 				<div className="flex flex-wrap items-center gap-2">
-					<button
+					<Button
 						onClick={handleNewProject}
-						disabled={loading}
-						className="flex cursor-pointer items-center gap-2 border border-blue-700 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+						disabled={loading || presets.length === 0}
+						variant="default"
 					>
 						New Project
-					</button>
-					<button
-						onClick={() => router.push("/projects")}
-						className="flex cursor-pointer items-center gap-2 border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm font-semibold text-neutral-100 transition hover:bg-neutral-700"
-					>
+					</Button>
+					<Button onClick={() => router.push("/projects")} variant="outline">
 						View Projects
-					</button>
+					</Button>
 				</div>
 				{loading ? (
-					<div className={`h-4 w-40 ${skeletonBaseClasses}`} />
-				) : selectedPreset ? (
-					<div className="text-sm text-neutral-200">Using preset: {selectedPreset.name}</div>
+					<Skeleton className="h-4 w-44" />
+				) : selectedPreset && selectedPreset.name !== "" ? (
+					<FieldDescription>Using preset: {selectedPreset.name}</FieldDescription>
 				) : (
-					<div className="h-5 w-52 animate-pulse bg-neutral-700 text-sm" />
+					<Skeleton className="h-4 w-44" />
 				)}
 			</div>
-			<div className="space-y-2">
-				<div className="text-base font-semibold">Presets</div>
-				{error && <div className="text-sm text-red-400">{error}</div>}
+			<Field>
+				<FieldLabel>Presets</FieldLabel>
+				{error && <FieldDescription className="text-red-400">{error}</FieldDescription>}
 				{presets.length === 0 ? (
-					<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3" aria-label="Loading presets">
+					<RadioGroup
+						value={selectedPresetId ?? ""}
+						onValueChange={(value) => setSelectedPresetId(value as string)}
+						className="grid gap-3 sm:grid-cols-2 md:grid-cols-3"
+					>
 						{Array.from({ length: 3 }).map((_, index) => (
-							<PresetSkeleton key={index} keyIndex={index} />
+							<FieldLabel key={index} htmlFor={`preset-${index}`} className="cursor-pointer">
+								<Field orientation="horizontal">
+									<RadioGroupItem value={`preset-${index}`} id={`preset-${index}`} />
+									<FieldContent>
+										<Skeleton className="h-[16.5px] w-30" />
+										<Skeleton className="h-4.5 w-36" />
+									</FieldContent>
+								</Field>
+							</FieldLabel>
 						))}
-					</div>
+					</RadioGroup>
 				) : (
-					<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+					<RadioGroup
+						value={selectedPresetId ?? ""}
+						onValueChange={(value) => setSelectedPresetId(value as string)}
+						className="grid gap-3 sm:grid-cols-2 md:grid-cols-3"
+					>
 						{presets.map((preset) => (
-							<label
-								key={preset.id}
-								className={`block cursor-pointer border-2 bg-neutral-800 p-3 transition hover:border-blue-500 ${
-									selectedPresetId === preset.id ? "border-blue-500" : "border-neutral-800"
-								}`}
-							>
-								<div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-200">
-									<input
-										type="radio"
-										name="preset"
-										value={preset.id}
-										checked={selectedPresetId === preset.id}
-										onChange={() => setSelectedPresetId(preset.id)}
-										className="accent-blue-500"
-									/>
-									<span>{preset.name}</span>
-								</div>
-								<div className="text-xs text-neutral-400">
-									{preset.width}x{preset.height} • {preset.fps}fps • {preset.aspectRatioLabel}
-								</div>
-							</label>
+							<FieldLabel key={preset.id} htmlFor={preset.id} className="cursor-pointer">
+								<Field orientation="horizontal">
+									<RadioGroupItem value={preset.id} id={preset.id} />
+									<FieldContent>
+										<div className="font-medium">{preset.name}</div>
+										<FieldDescription>
+											{preset.width}x{preset.height} • {preset.fps}fps • {preset.aspectRatioLabel}
+										</FieldDescription>
+									</FieldContent>
+								</Field>
+							</FieldLabel>
 						))}
-					</div>
+					</RadioGroup>
 				)}
-			</div>
+			</Field>
 		</PageShell>
 	);
 }

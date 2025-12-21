@@ -9,11 +9,11 @@ import {
 } from "@/lib/client/media-store";
 import { VIDEO_PRESETS } from "@/lib/shared/presets";
 import { Clip, Timeline, Track, validateTimeline } from "@/lib/shared/timeline";
-import { TopBar } from "../_components/TopBar";
-import { MediaBrowser, MediaItem, MEDIA_DRAG_TYPE } from "../_components/MediaBrowser";
-import { Viewer } from "../_components/Viewer";
+import { TopBar } from "../_components/top-bar";
+import { MediaBrowser, MediaItem, MEDIA_DRAG_TYPE } from "../_components/media-browser";
+import { Viewer } from "../_components/viewer";
 import { Inspector } from "../_components/Inspector";
-import { TimelineView } from "../_components/TimelineView";
+import { TimelineView } from "../_components/timeline-view";
 import { VideoIcon, ImageIcon, MusicIcon } from "lucide-react";
 
 const MIN_LEFT = 300;

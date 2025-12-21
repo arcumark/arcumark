@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VideoPreset } from "@/lib/shared/presets";
 import type { Clip } from "@/lib/shared/timeline";
-import type { MediaItem } from "./MediaBrowser";
+import type { MediaItem } from "./media-browser";
 
 type PresetOption = VideoPreset;
 

@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { PageShell } from "@/components/PageShell";
+import { PageShell } from "@/components/page-shell";
 import { readAllMediaRecords, type StoredMediaRecord } from "@/lib/client/media-store";
 import { VIDEO_PRESETS, type VideoPreset } from "@/lib/shared/presets";
 import { Clip, Timeline, validateTimeline } from "@/lib/shared/timeline";
+import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 type LoadedMediaRecord = StoredMediaRecord & { url: string };
 
@@ -549,18 +558,22 @@ export default function ExportPage() {
 					<div className="font-semibold text-white">Project {projectId}</div>
 					<div className="text-neutral-400">{summary}</div>
 					<div className="ml-auto flex items-center gap-2">
-						<label className="text-xs text-neutral-400">Preset</label>
-						<select
-							className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-xs text-neutral-50"
+						<Label>Preset</Label>
+						<Select
 							value={activePreset?.id ?? selectedPresetId ?? ""}
-							onChange={(e) => setSelectedPresetId(e.target.value)}
+							onValueChange={setSelectedPresetId}
 						>
-							{presets.map((preset) => (
-								<option key={preset.id} value={preset.id}>
-									{preset.name}
-								</option>
-							))}
-						</select>
+							<SelectTrigger className="w-auto">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{presets.map((preset) => (
+									<SelectItem key={preset.id} value={preset.id}>
+										{preset.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 						{activePreset && (
 							<div className="border border-neutral-800 bg-neutral-950 px-2 py-1 text-[11px] text-neutral-300">
 								{activePreset.aspectRatioLabel} • {activePreset.width}x{activePreset.height} @{" "}
@@ -572,34 +585,19 @@ export default function ExportPage() {
 
 				<div className="grid gap-3 border border-neutral-800 bg-neutral-900 p-4">
 					<div className="flex flex-wrap items-center gap-2">
-						<button
-							onClick={handleValidate}
-							disabled={loading || isExporting}
-							className="cursor-pointer border border-blue-700 bg-blue-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-						>
+						<Button onClick={handleValidate} disabled={loading || isExporting} variant="default">
 							Validate timeline
-						</button>
-						<button
-							onClick={handleStartExport}
-							disabled={loading || isExporting}
-							className="cursor-pointer border border-blue-700 bg-blue-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-						>
+						</Button>
+						<Button onClick={handleStartExport} disabled={loading || isExporting} variant="default">
 							Export video
-						</button>
-						<button
-							onClick={handleAdvice}
-							disabled={loading || isExporting}
-							className="cursor-pointer border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-semibold text-neutral-100 transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
-						>
+						</Button>
+						<Button onClick={handleAdvice} disabled={loading || isExporting} variant="outline">
 							Get advice
-						</button>
+						</Button>
 						{isExporting && (
-							<button
-								onClick={handleCancelExport}
-								className="cursor-pointer border border-red-700 bg-red-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-600"
-							>
+							<Button onClick={handleCancelExport} variant="destructive">
 								Cancel
-							</button>
+							</Button>
 						)}
 					</div>
 
@@ -659,7 +657,7 @@ export default function ExportPage() {
 							<a
 								href={downloadUrl}
 								download={`${timeline?.name ?? "arcumark"}_${projectId}.webm`}
-								className="cursor-pointer border border-blue-700 bg-blue-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
+								className="inline-flex cursor-pointer items-center justify-center border border-blue-700 bg-blue-500 text-white transition hover:bg-blue-600"
 							>
 								Download video (.webm)
 							</a>

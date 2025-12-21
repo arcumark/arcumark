@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Timeline, Track } from "@/lib/shared/timeline";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 type Props = {
 	timeline: Timeline;
@@ -226,11 +228,9 @@ export function TimelineView({
 					<div className="flex h-[36px] items-center justify-between border-b border-neutral-800 pr-2 pl-3 text-[11px] text-neutral-400">
 						<span className="text-neutral-200">Ruler</span>
 						<label className="flex items-center gap-1 text-[11px] text-neutral-300 select-none">
-							<input
-								type="checkbox"
-								className="accent-blue-500"
+							<Checkbox
 								checked={snapEnabled}
-								onChange={(e) => onToggleSnap(e.target.checked)}
+								onCheckedChange={onToggleSnap}
 								aria-label="Toggle snap to grid"
 							/>
 							Snap
@@ -256,8 +256,9 @@ export function TimelineView({
 										<div className="tracking-tight">{track.id.toUpperCase()}</div>
 									</div>
 									<div className="flex gap-1">
-										<button
-											className={`border px-2 py-1 text-[11px] transition ${muteState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+										<Button
+											variant={muteState[track.id] ? "default" : "outline"}
+											size="xs"
 											disabled={!selectedClipId}
 											onClick={() =>
 												selectedClipId &&
@@ -265,9 +266,10 @@ export function TimelineView({
 											}
 										>
 											M
-										</button>
-										<button
-											className={`border px-2 py-1 text-[11px] transition ${soloState[track.id] ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+										</Button>
+										<Button
+											variant={soloState[track.id] ? "default" : "outline"}
+											size="xs"
 											disabled={!selectedClipId}
 											onClick={() =>
 												selectedClipId &&
@@ -275,9 +277,10 @@ export function TimelineView({
 											}
 										>
 											S
-										</button>
-										<button
-											className={`border px-2 py-1 text-[11px] transition ${visibilityState[track.id] === false ? "border-blue-700 bg-blue-500 text-slate-950" : "border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"} ${selectedClipId ? "" : "cursor-not-allowed opacity-50"}`}
+										</Button>
+										<Button
+											variant={visibilityState[track.id] === false ? "default" : "outline"}
+											size="xs"
 											disabled={!selectedClipId}
 											onClick={() =>
 												selectedClipId &&
@@ -288,7 +291,7 @@ export function TimelineView({
 											}
 										>
 											V
-										</button>
+										</Button>
 									</div>
 								</div>
 							))}

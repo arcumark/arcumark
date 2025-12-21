@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { PageShell } from "../../components/PageShell";
+import { PageShell } from "../../components/page-shell";
+import { Button } from "@/components/ui/button";
 import { createProjectId } from "@/lib/utils";
 
 export default function EditorIndexPage() {
@@ -15,12 +16,9 @@ export default function EditorIndexPage() {
 	return (
 		<PageShell title="Editor" description="Select or create a project ID to open the editor.">
 			<div className="flex flex-wrap items-center gap-3">
-				<button
-					className="flex cursor-pointer items-center gap-2 border border-blue-700 bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-					onClick={handleNew}
-				>
+				<Button onClick={handleNew} variant="default">
 					Create new project
-				</button>
+				</Button>
 			</div>
 		</PageShell>
 	);

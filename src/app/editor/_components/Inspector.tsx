@@ -2,6 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Clip, Track } from "@/lib/shared/timeline";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 type Props = {
 	clip: Clip | null;
@@ -132,9 +143,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 			<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
 				<div className="text-sm font-semibold text-neutral-200">Clip</div>
 				<div className="grid gap-2">
-					<label className="text-xs text-neutral-400">Name</label>
-					<input
-						className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+					<Label>Name</Label>
+					<Input
 						value={displayName}
 						onChange={(e) =>
 							onChange({
@@ -144,19 +154,14 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 					/>
 				</div>
 				<div className="grid gap-2">
-					<label className="text-xs text-neutral-400">Source ID</label>
-					<input
-						className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
-						value={clip.sourceId}
-						readOnly
-					/>
+					<Label>Source ID</Label>
+					<Input value={clip.sourceId} readOnly />
 				</div>
 				<div className="text-sm font-semibold text-neutral-200">Timing</div>
 				<div className="grid grid-cols-2 gap-3">
 					<div className="grid min-w-0 gap-2">
-						<label className="text-xs text-neutral-400">Start (s)</label>
-						<input
-							className="w-full border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+						<Label>Start (s)</Label>
+						<Input
 							type="number"
 							step="0.1"
 							value={clip.start}
@@ -164,9 +169,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						/>
 					</div>
 					<div className="grid min-w-0 gap-2">
-						<label className="text-xs text-neutral-400">End (s)</label>
-						<input
-							className="w-full border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+						<Label>End (s)</Label>
+						<Input
 							type="number"
 							step="0.1"
 							value={clip.end}
@@ -177,9 +181,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 				<div className="text-sm font-semibold text-neutral-200">Look & Sound</div>
 				<div className="grid grid-cols-2 gap-3">
 					<div className="grid gap-2">
-						<label className="text-xs text-neutral-400">Opacity</label>
-						<input
-							className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+						<Label>Opacity</Label>
+						<Input
 							type="number"
 							min={0}
 							max={100}
@@ -196,9 +199,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 					</div>
 					{clipKind !== "text" && (
 						<div className="grid gap-2">
-							<label className="text-xs text-neutral-400">Volume</label>
-							<input
-								className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+							<Label>Volume</Label>
+							<Input
 								type="number"
 								min={0}
 								max={100}
@@ -219,9 +221,9 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 					<>
 						<div className="text-sm font-semibold text-neutral-200">Text</div>
 						<div className="grid gap-2">
-							<label className="text-xs text-neutral-400">Content</label>
-							<textarea
-								className="min-h-[80px] border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+							<Label>Content</Label>
+							<Textarea
+								className="min-h-[80px]"
 								value={textValue}
 								onChange={(e) =>
 									onChange({
@@ -232,27 +234,30 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Font family</label>
-								<select
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Font family</Label>
+								<Select
 									value={fontValue}
-									onChange={(e) =>
+									onValueChange={(value) =>
 										onChange({
-											props: { ...clip.props, font: e.target.value },
+											props: { ...clip.props, font: value },
 										})
 									}
 								>
-									{fontOptions.map((font) => (
-										<option key={font} value={font}>
-											{font}
-										</option>
-									))}
-								</select>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{fontOptions.map((font) => (
+											<SelectItem key={font} value={font}>
+												{font}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Font size</label>
-								<input
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Font size</Label>
+								<Input
 									type="number"
 									min={8}
 									max={200}
@@ -267,9 +272,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Pos X (%)</label>
-								<input
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Pos X (%)</Label>
+								<Input
 									type="number"
 									min={0}
 									max={100}
@@ -285,9 +289,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 								/>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Pos Y (%)</label>
-								<input
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Pos Y (%)</Label>
+								<Input
 									type="number"
 									min={0}
 									max={100}
@@ -305,49 +308,56 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Anchor X</label>
-								<select
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Anchor X</Label>
+								<Select
 									value={anchorX}
-									onChange={(e) =>
+									onValueChange={(value) =>
 										onChange({
 											props: {
 												...clip.props,
-												anchorX: e.target.value as "left" | "center" | "right",
+												anchorX: value as "left" | "center" | "right",
 											},
 										})
 									}
 								>
-									<option value="left">Left</option>
-									<option value="center">Center</option>
-									<option value="right">Right</option>
-								</select>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="left">Left</SelectItem>
+										<SelectItem value="center">Center</SelectItem>
+										<SelectItem value="right">Right</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Anchor Y</label>
-								<select
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Anchor Y</Label>
+								<Select
 									value={anchorY}
-									onChange={(e) =>
+									onValueChange={(value) =>
 										onChange({
 											props: {
 												...clip.props,
-												anchorY: e.target.value as "top" | "center" | "bottom",
+												anchorY: value as "top" | "center" | "bottom",
 											},
 										})
 									}
 								>
-									<option value="top">Top</option>
-									<option value="center">Center</option>
-									<option value="bottom">Bottom</option>
-								</select>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="top">Top</SelectItem>
+										<SelectItem value="center">Center</SelectItem>
+										<SelectItem value="bottom">Bottom</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Rotation (deg)</label>
-								<input
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Rotation (deg)</Label>
+								<Input
 									type="number"
 									min={-360}
 									max={360}
@@ -360,27 +370,30 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 								/>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Align</label>
-								<select
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Align</Label>
+								<Select
 									value={textAlign}
-									onChange={(e) =>
+									onValueChange={(value) =>
 										onChange({
-											props: { ...clip.props, align: e.target.value },
+											props: { ...clip.props, align: value },
 										})
 									}
 								>
-									<option value="left">Left</option>
-									<option value="center">Center</option>
-									<option value="right">Right</option>
-								</select>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="left">Left</SelectItem>
+										<SelectItem value="center">Center</SelectItem>
+										<SelectItem value="right">Right</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Line spacing</label>
-								<input
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Line spacing</Label>
+								<Input
 									type="number"
 									min={0.5}
 									max={3}
@@ -397,9 +410,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 								/>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Letter spacing (px)</label>
-								<input
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Letter spacing (px)</Label>
+								<Input
 									type="number"
 									min={-10}
 									max={50}
@@ -414,9 +426,9 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 							</div>
 						</div>
 						<div className="grid gap-2">
-							<label className="text-xs text-neutral-400">Color</label>
-							<input
-								className="h-9 w-full cursor-pointer border border-neutral-700 bg-neutral-800 px-2 py-1"
+							<Label>Color</Label>
+							<Input
+								className="h-9 w-full cursor-pointer px-2 py-1"
 								type="color"
 								value={colorValue}
 								onChange={(e) =>
@@ -428,9 +440,9 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Stroke color</label>
-								<input
-									className="h-9 w-full cursor-pointer border border-neutral-700 bg-neutral-800 px-2 py-1"
+								<Label>Stroke color</Label>
+								<Input
+									className="h-9 w-full cursor-pointer px-2 py-1"
 									type="color"
 									value={strokeColor}
 									onChange={(e) =>
@@ -441,9 +453,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 								/>
 							</div>
 							<div className="grid gap-2">
-								<label className="text-xs text-neutral-400">Stroke width</label>
-								<input
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
+								<Label>Stroke width</Label>
+								<Input
 									type="number"
 									min={0}
 									max={20}
@@ -462,12 +473,9 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 					</>
 				)}
 				<div className="grid gap-2">
-					<button
-						className="border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-50 transition hover:bg-neutral-700"
-						onClick={() => onChange({ start: 0 })}
-					>
+					<Button variant="outline" onClick={() => onChange({ start: 0 })}>
 						Reset Start
-					</button>
+					</Button>
 				</div>
 			</div>
 		</div>

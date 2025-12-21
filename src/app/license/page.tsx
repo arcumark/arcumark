@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { PageShell } from "../../components/PageShell";
+import { PageShell } from "../../components/page-shell";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata: Metadata = {
 	title: "License",
@@ -32,9 +33,11 @@ SOFTWARE.
 export default function LicensePage() {
 	return (
 		<PageShell title="License" description="Arcumark is licensed under the MIT License.">
-			<div className="bg-neutral-800 p-4 font-mono text-sm whitespace-pre-wrap text-neutral-200">
-				{license}
-			</div>
+			<Card>
+				<CardContent>
+					<pre className="font-mono text-xs whitespace-pre-wrap">{license}</pre>
+				</CardContent>
+			</Card>
 		</PageShell>
 	);
 }
