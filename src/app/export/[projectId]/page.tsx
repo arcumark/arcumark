@@ -553,10 +553,10 @@ export default function ExportPage() {
 			description="Validate the timeline and export a WebM locally. Rendering happens in your browser—no uploads."
 			maxWidth="max-w-5xl"
 		>
-			<div className="grid gap-4 text-sm text-neutral-200">
+			<div className="text-foreground grid gap-4 text-xs">
 				<div className="flex flex-wrap items-center gap-2 border border-neutral-800 bg-neutral-900 px-4 py-3">
-					<div className="font-semibold text-white">Project {projectId}</div>
-					<div className="text-neutral-400">{summary}</div>
+					<div className="font-semibold">Project {projectId}</div>
+					<div className="text-muted-foreground">{summary}</div>
 					<div className="ml-auto flex items-center gap-2">
 						<Label>Preset</Label>
 						<Select
@@ -575,7 +575,7 @@ export default function ExportPage() {
 							</SelectContent>
 						</Select>
 						{activePreset && (
-							<div className="border border-neutral-800 bg-neutral-950 px-2 py-1 text-[11px] text-neutral-300">
+							<div className="text-muted-foreground border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs">
 								{activePreset.aspectRatioLabel} • {activePreset.width}x{activePreset.height} @{" "}
 								{activePreset.fps}fps
 							</div>
@@ -601,17 +601,17 @@ export default function ExportPage() {
 						)}
 					</div>
 
-					{loading && <div className="text-xs text-neutral-400">Processing…</div>}
+					{loading && <div className="text-muted-foreground text-xs">Processing…</div>}
 					{validationResult && (
 						<div
-							className={`border px-3 py-2 text-xs ${validationResult === "OK" ? "border-blue-700 bg-blue-900/40 text-blue-200" : "border-orange-700 bg-orange-900/40 text-orange-200"}`}
+							className={`border px-3 py-2 text-xs ${validationResult === "OK" ? "border-primary/50 bg-primary/10 text-primary-foreground" : "border-destructive/50 bg-destructive/10 text-destructive-foreground"}`}
 						>
 							{validationResult}
 						</div>
 					)}
 					{adviceResult && adviceResult.length > 0 && (
-						<div className="grid gap-2 border border-neutral-800 bg-neutral-950/70 p-3 text-xs text-neutral-200">
-							<div className="text-neutral-300">Advice</div>
+						<div className="text-foreground grid gap-2 border border-neutral-800 bg-neutral-950/70 p-3 text-xs">
+							<div className="text-muted-foreground">Advice</div>
 							<ul className="list-disc space-y-1 pl-5">
 								{adviceResult.map((item, idx) => (
 									<li key={idx}>{item}</li>
@@ -621,47 +621,48 @@ export default function ExportPage() {
 					)}
 				</div>
 
-				<div className="grid gap-2 border border-neutral-800 bg-neutral-900 p-4 text-xs text-neutral-200">
+				<div className="text-foreground grid gap-2 border border-neutral-800 bg-neutral-900 p-4 text-xs">
 					<div className="flex flex-wrap items-center gap-3">
-						<div className="font-semibold text-neutral-100">Media status</div>
-						<div className="text-neutral-400">
+						<div className="font-semibold">Media status</div>
+						<div className="text-muted-foreground">
 							Library {mediaRecords.length} items / referenced {totalClips} clips
 						</div>
 					</div>
 					{missingSources.length === 0 ? (
-						<div className="border border-blue-700 bg-blue-900/40 px-3 py-2 text-blue-200">
+						<div className="border-primary/50 bg-primary/10 text-primary-foreground border px-3 py-2">
 							All referenced media is available.
 						</div>
 					) : (
-						<div className="border border-orange-700 bg-orange-900/40 px-3 py-2 text-orange-100">
+						<div className="border-destructive/50 bg-destructive/10 text-destructive-foreground border px-3 py-2">
 							Missing media: {missingSources.join(", ")}
 						</div>
 					)}
 				</div>
 
-				<div className="grid gap-2 border border-neutral-800 bg-neutral-900 p-4 text-xs text-neutral-200">
+				<div className="text-foreground grid gap-2 border border-neutral-800 bg-neutral-900 p-4 text-xs">
 					<div className="flex items-center justify-between">
-						<div className="font-semibold text-neutral-100">Export status</div>
-						{isExporting && <div className="text-[11px] text-neutral-400">In progress…</div>}
+						<div className="font-semibold">Export status</div>
+						{isExporting && <div className="text-muted-foreground text-xs">In progress…</div>}
 					</div>
 					<div className="h-2 overflow-hidden bg-neutral-800">
 						<div
-							className="h-full bg-blue-500 transition-[width]"
+							className="bg-primary h-full transition-[width]"
 							style={{ width: `${Math.min(100, Math.floor(progress * 100))}%` }}
 						/>
 					</div>
-					{message && <div className="text-neutral-300">{message}</div>}
-					{exportError && <div className="text-orange-200">Error: {exportError}</div>}
+					{message && <div className="text-muted-foreground">{message}</div>}
+					{exportError && <div className="text-destructive">Error: {exportError}</div>}
 					{downloadUrl && (
 						<div className="flex items-center gap-3">
-							<a
-								href={downloadUrl}
-								download={`${timeline?.name ?? "arcumark"}_${projectId}.webm`}
-								className="inline-flex cursor-pointer items-center justify-center border border-blue-700 bg-blue-500 text-white transition hover:bg-blue-600"
-							>
-								Download video (.webm)
-							</a>
-							<div className="text-neutral-400">Done: {Math.round(progress * 100)}%</div>
+							<Button asChild>
+								<a
+									href={downloadUrl}
+									download={`${timeline?.name ?? "arcumark"}_${projectId}.webm`}
+								>
+									Download video (.webm)
+								</a>
+							</Button>
+							<div className="text-muted-foreground">Done: {Math.round(progress * 100)}%</div>
 						</div>
 					)}
 				</div>

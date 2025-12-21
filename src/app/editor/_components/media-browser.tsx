@@ -73,7 +73,7 @@ export function MediaBrowser({ items, onImport }: Props) {
 			</div>
 			<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
 				<div
-					className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-neutral-700 bg-neutral-950 py-3 text-xs text-neutral-300 transition hover:border-blue-500 hover:text-neutral-50"
+					className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-neutral-700 bg-neutral-950 py-3 text-xs transition hover:border-blue-500"
 					onClick={() => fileInputRef.current?.click()}
 				>
 					<UploadIcon className="size-4" />
@@ -85,43 +85,39 @@ export function MediaBrowser({ items, onImport }: Props) {
 					return (
 						<div key={category} className="border border-neutral-800 bg-neutral-950">
 							<button
-								className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-neutral-100"
+								className="flex w-full items-center justify-between px-3 py-2 text-left text-xs"
 								onClick={() => setSections((prev) => ({ ...prev, [category]: !prev[category] }))}
 							>
 								<span className="flex items-center gap-2">
-									<span className="text-xs text-neutral-400">{isOpen ? "▾" : "▸"}</span>
+									<span>{isOpen ? "▾" : "▸"}</span>
 									{category.charAt(0).toUpperCase() + category.slice(1)}
 								</span>
-								<span className="text-xs text-neutral-400">{itemsForSection.length}</span>
+								<span>{itemsForSection.length}</span>
 							</button>
 							{isOpen && (
 								<div className="border-t border-neutral-800 p-2">
 									{itemsForSection.length === 0 ? (
-										<div className="text-center text-xs text-neutral-500">No items.</div>
+										<div className="text-center text-xs">No items.</div>
 									) : viewMode === "list" ? (
 										itemsForSection.map((item) => (
 											<div
 												key={item.id}
-												className="mb-2 grid grid-cols-[56px_1fr] items-center gap-2 border border-neutral-800 bg-neutral-950 p-2 text-sm text-neutral-50 last:mb-0"
+												className="mb-2 grid grid-cols-[56px_1fr] items-center gap-2 border border-neutral-800 bg-neutral-950 p-2 last:mb-0"
 												draggable
 												onDragStart={(e) => {
 													e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
 													e.dataTransfer.effectAllowed = "copy";
 												}}
 											>
-												<div className="flex h-12 w-14 items-center justify-center border border-neutral-800 bg-neutral-900 text-base text-neutral-300">
+												<div className="flex h-12 w-14 items-center justify-center border border-neutral-800 bg-neutral-900">
 													{item.icon}
 												</div>
-												<div className="flex min-w-0 flex-col gap-1">
+												<div className="flex min-w-0 flex-col gap-1 text-xs">
 													<div className="flex items-center justify-between gap-2">
-														<div className="truncate text-sm font-semibold text-neutral-100">
-															{item.name}
-														</div>
-														<div className="flex-none text-xs text-neutral-400">
-															{item.durationLabel}
-														</div>
+														<div className="truncate font-semibold">{item.name}</div>
+														<div className="flex-none">{item.durationLabel}</div>
 													</div>
-													<div className="text-[11px] text-neutral-400">Type: {item.type}</div>
+													<div>Type: {item.type}</div>
 												</div>
 											</div>
 										))
@@ -130,21 +126,21 @@ export function MediaBrowser({ items, onImport }: Props) {
 											{itemsForSection.map((item) => (
 												<div
 													key={item.id}
-													className="flex flex-col gap-2 border border-neutral-800 bg-neutral-950 p-2 text-sm text-neutral-50"
+													className="flex flex-col gap-2 border border-neutral-800 bg-neutral-950 p-2 text-xs"
 													draggable
 													onDragStart={(e) => {
 														e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
 														e.dataTransfer.effectAllowed = "copy";
 													}}
 												>
-													<div className="flex h-24 items-center justify-center border border-neutral-800 bg-neutral-900 text-lg text-neutral-300">
+													<div className="flex h-24 items-center justify-center border border-neutral-800 bg-neutral-900">
 														{item.icon}
 													</div>
-													<div className="flex items-center justify-between text-sm font-semibold text-neutral-100">
+													<div className="flex items-center justify-between font-semibold">
 														<span className="truncate">{item.name}</span>
-														<span className="text-xs text-neutral-400">{item.durationLabel}</span>
+														<span>{item.durationLabel}</span>
 													</div>
-													<div className="text-[11px] text-neutral-400">Type: {item.type}</div>
+													<div>Type: {item.type}</div>
 												</div>
 											))}
 										</div>
@@ -153,22 +149,18 @@ export function MediaBrowser({ items, onImport }: Props) {
 											{itemsForSection.map((item) => (
 												<div
 													key={item.id}
-													className="flex flex-col items-center gap-1 border border-neutral-800 bg-neutral-950 p-2 text-sm text-neutral-50"
+													className="flex flex-col items-center gap-1 border border-neutral-800 bg-neutral-950 p-2 text-xs"
 													draggable
 													onDragStart={(e) => {
 														e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
 														e.dataTransfer.effectAllowed = "copy";
 													}}
 												>
-													<div className="flex h-12 w-12 items-center justify-center overflow-hidden border border-neutral-800 bg-neutral-900 text-lg text-neutral-300">
-														<span className="truncate text-lg">{item.icon}</span>
+													<div className="flex h-12 w-12 items-center justify-center overflow-hidden border border-neutral-800 bg-neutral-900">
+														<span className="truncate">{item.icon}</span>
 													</div>
-													<div className="w-full truncate text-center text-xs text-neutral-200">
-														{item.name}
-													</div>
-													<div className="w-full truncate text-center text-[11px] text-neutral-400">
-														{item.durationLabel}
-													</div>
+													<div className="w-full truncate text-center">{item.name}</div>
+													<div className="w-full truncate text-center">{item.durationLabel}</div>
 												</div>
 											))}
 										</div>

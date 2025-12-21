@@ -86,8 +86,8 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 	if (!clip) {
 		return (
 			<div className="flex h-full flex-col">
-				<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3 text-sm text-neutral-400">
-					<div className="text-center text-neutral-500">No clip selected</div>
+				<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
+					<div className="text-center text-xs">No clip selected</div>
 				</div>
 			</div>
 		);
@@ -141,7 +141,7 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 	return (
 		<div className="flex h-full flex-col">
 			<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
-				<div className="text-sm font-semibold text-neutral-200">Clip</div>
+				<Label className="text-xs font-semibold">Clip</Label>
 				<div className="grid gap-2">
 					<Label>Name</Label>
 					<Input
@@ -157,7 +157,7 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 					<Label>Source ID</Label>
 					<Input value={clip.sourceId} readOnly />
 				</div>
-				<div className="text-sm font-semibold text-neutral-200">Timing</div>
+				<Label className="text-xs font-semibold">Timing</Label>
 				<div className="grid grid-cols-2 gap-3">
 					<div className="grid min-w-0 gap-2">
 						<Label>Start (s)</Label>
@@ -178,7 +178,7 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						/>
 					</div>
 				</div>
-				<div className="text-sm font-semibold text-neutral-200">Look & Sound</div>
+				<Label className="text-xs font-semibold">Look & Sound</Label>
 				<div className="grid grid-cols-2 gap-3">
 					<div className="grid gap-2">
 						<Label>Opacity</Label>
@@ -219,7 +219,7 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 				</div>
 				{clipKind === "text" && (
 					<>
-						<div className="text-sm font-semibold text-neutral-200">Text</div>
+						<Label className="text-xs font-semibold">Text</Label>
 						<div className="grid gap-2">
 							<Label>Content</Label>
 							<Textarea

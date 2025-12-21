@@ -1,6 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { SkipBack, Play, Pause, Square, SkipForward, Repeat } from "lucide-react";
 
 type Props = {
 	projectName: string;
@@ -26,41 +29,56 @@ export function TopBar({
 	onLoopToggle,
 }: Props) {
 	return (
-		<div className="flex h-12 items-center gap-3 border-b border-neutral-800 bg-neutral-900 px-3 text-neutral-100">
-			<div className="text-base font-bold text-white">Arcumark</div>
-			<div className="text-sm text-neutral-300">{projectName}</div>
+		<div className="flex h-12 items-center gap-3 border-b border-neutral-800 bg-neutral-900 px-3">
+			<Label>Arcumark</Label>
+			<Label className="font-mono">{projectName}</Label>
 			<Button variant="default" onClick={onExport}>
 				Export
 			</Button>
 			<div className="flex-1" />
 			<div className="flex items-center gap-2">
-				<Button variant="outline" onClick={onStep.bind(null, -1)} aria-label="Step backward">
-					◀
+				<Button
+					variant="outline"
+					size="icon"
+					onClick={onStep.bind(null, -1)}
+					aria-label="Step backward"
+				>
+					<SkipBack />
 				</Button>
 				<Button
 					variant={isPlaying ? "default" : "outline"}
+					size="icon"
 					onClick={onPlayToggle}
-					aria-label="Play or pause"
+					aria-label={isPlaying ? "Pause" : "Play"}
 				>
-					{isPlaying ? "Pause" : "Play"}
+					{isPlaying ? <Pause /> : <Play />}
 				</Button>
-				<Button variant="outline" onClick={onStop} aria-label="Stop">
-					Stop
+				<Button variant="outline" size="icon" onClick={onStop} aria-label="Stop">
+					<Square />
 				</Button>
-				<Button variant="outline" onClick={onStep.bind(null, 1)} aria-label="Step forward">
-					▶
+				<Button
+					variant="outline"
+					size="icon"
+					onClick={onStep.bind(null, 1)}
+					aria-label="Step forward"
+				>
+					<SkipForward />
 				</Button>
 				<Button
 					variant={loop ? "default" : "outline"}
+					size="icon"
 					onClick={onLoopToggle}
 					aria-label="Loop toggle"
 				>
-					Loop
+					<Repeat />
 				</Button>
 			</div>
-			<div className="border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-sm text-slate-200">
-				{timecode}
-			</div>
+			<Input
+				className="focus-visible:border-border w-fit cursor-default font-mono select-none focus-visible:ring-0 focus-visible:ring-offset-0"
+				value={timecode}
+				readOnly
+				tabIndex={-1}
+			/>
 		</div>
 	);
 }

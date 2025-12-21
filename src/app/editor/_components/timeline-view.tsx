@@ -225,9 +225,9 @@ export function TimelineView({
 		<div className="flex h-full flex-col border border-neutral-800 bg-neutral-900">
 			<div className="grid flex-1 grid-cols-[160px_1fr] overflow-hidden">
 				<div className="sticky left-0 flex h-full min-h-0 flex-col border-r border-neutral-800 bg-neutral-900">
-					<div className="flex h-[36px] items-center justify-between border-b border-neutral-800 pr-2 pl-3 text-[11px] text-neutral-400">
-						<span className="text-neutral-200">Ruler</span>
-						<label className="flex items-center gap-1 text-[11px] text-neutral-300 select-none">
+					<div className="flex h-[36px] items-center justify-between border-b border-neutral-800 pr-2 pl-3 text-xs">
+						<span>Ruler</span>
+						<label className="flex items-center gap-1 select-none">
 							<Checkbox
 								checked={snapEnabled}
 								onCheckedChange={onToggleSnap}
@@ -249,11 +249,11 @@ export function TimelineView({
 							{timeline.tracks.map((track) => (
 								<div
 									key={track.id}
-									className="flex h-12 items-center justify-between border-b border-neutral-800 px-3 text-xs text-neutral-200"
+									className="flex h-12 items-center justify-between border-b border-neutral-800 px-3"
 								>
 									<div className="flex items-center gap-2">
 										<div className={trackBadgeClass(track.kind)} />
-										<div className="tracking-tight">{track.id.toUpperCase()}</div>
+										<div className="text-xs tracking-tight">{track.id.toUpperCase()}</div>
 									</div>
 									<div className="flex gap-1">
 										<Button
@@ -332,7 +332,7 @@ export function TimelineView({
 						}}
 					>
 						<div
-							className="sticky top-0 z-20 flex h-[36px] items-center border-b border-neutral-800 bg-neutral-900"
+							className="sticky top-0 z-20 flex h-[36px] items-center border-b border-neutral-800 bg-neutral-900 text-xs"
 							style={{ width }}
 						>
 							{markers.map((value) => {
@@ -340,7 +340,7 @@ export function TimelineView({
 								return (
 									<div
 										key={value}
-										className="flex h-[36px] items-center border-r border-neutral-800 pl-1 text-[11px] text-neutral-400 select-none"
+										className="flex h-[36px] items-center border-r border-neutral-800 pl-1 select-none"
 										style={{ width: markWidth }}
 									>
 										{value}s
@@ -387,7 +387,7 @@ export function TimelineView({
 										return (
 											<div
 												key={clip.id}
-												className={`absolute top-1.5 flex h-9 items-center justify-between border px-2 text-[12px] text-neutral-100 ${baseBg} ${
+												className={`absolute top-1.5 flex h-9 items-center justify-between border px-2 text-xs ${baseBg} ${
 													selectedClipId === clip.id
 														? "border-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.8)]"
 														: "border-neutral-800"

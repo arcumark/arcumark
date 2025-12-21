@@ -4,6 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { VideoPreset } from "@/lib/shared/presets";
 import type { Clip } from "@/lib/shared/timeline";
 import type { MediaItem } from "./media-browser";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
 type PresetOption = VideoPreset;
 
@@ -336,25 +344,33 @@ export function Viewer({
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			<div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200">
+			<div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900 px-3 py-2 text-xs">
 				<div>Viewer</div>
 				<div className="flex items-center gap-2">
-					<select
-						className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-50"
-						value={activePresetId ?? presetOptions[0]?.id}
-						onChange={(e) => onPresetChange?.(e.target.value)}
+					<Select
+						value={activePresetId ?? presetOptions[0]?.id ?? ""}
+						onValueChange={(value) => {
+							if (value) {
+								onPresetChange?.(value);
+							}
+						}}
 					>
-						{presetOptions.map((preset) => (
-							<option key={preset.id} value={preset.id}>
-								{preset.name}
-							</option>
-						))}
-					</select>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{presetOptions.map((preset) => (
+								<SelectItem key={preset.id} value={preset.id}>
+									{preset.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 			</div>
 			<div className="flex flex-1 flex-col gap-3 overflow-hidden bg-neutral-900 p-3">
 				<div className="relative flex min-h-[200px] flex-1 flex-col border border-neutral-800 bg-neutral-950">
-					<div className="absolute top-0 left-0 z-10 flex w-full items-center gap-2 px-4 pt-3 pb-2 font-mono text-[11px] text-neutral-50 select-none">
+					<div className="absolute top-0 left-0 z-10 flex w-full items-center gap-2 px-4 pt-3 pb-2 font-mono text-xs select-none">
 						{activePreset && (
 							<div className="border border-neutral-800 bg-neutral-900/90 px-2 py-1">
 								{activePreset.aspectRatioLabel} • {activePreset.width}x{activePreset.height}
@@ -436,7 +452,7 @@ export function Viewer({
 											<track kind="captions" />
 										</video>
 									) : (
-										<div className="flex h-full w-full items-center justify-center text-sm text-neutral-500 select-none">
+										<div className="flex h-full w-full items-center justify-center text-xs select-none">
 											Import a video and add it to the timeline to preview.
 										</div>
 									)}
@@ -642,20 +658,22 @@ export function Viewer({
 				>
 					<div className="absolute top-1/2 right-0 left-0 h-[2px] -translate-y-1/2 bg-neutral-700" />
 					<div
-						className="absolute top-0 h-full w-[2px] bg-blue-500"
+						className="bg-primary absolute top-0 h-full w-[2px]"
 						style={{ left: `${(duration === 0 ? 0 : (currentTime / duration) * 100).toFixed(3)}%` }}
 					/>
 				</div>
-				<div className="flex flex-none items-center justify-between text-xs text-neutral-300">
+				<div className="flex flex-none items-center justify-between text-xs">
 					<div className="select-none">Zoom</div>
-					<input
+					<Slider
 						className="w-40"
-						type="range"
 						min={0.5}
 						max={3}
 						step={0.1}
-						value={zoom}
-						onChange={(e) => onZoomChange(parseFloat(e.target.value))}
+						value={[zoom]}
+						onValueChange={(values) => {
+							const val = Array.isArray(values) ? values[0] : values;
+							onZoomChange(typeof val === "number" ? val : zoom);
+						}}
 					/>
 				</div>
 				<audio ref={audioRef} className="hidden" />

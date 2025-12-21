@@ -15,6 +15,14 @@ import { Viewer } from "../_components/viewer";
 import { Inspector } from "../_components/Inspector";
 import { TimelineView } from "../_components/timeline-view";
 import { VideoIcon, ImageIcon, MusicIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 const MIN_LEFT = 300;
 const MIN_RIGHT = 300;
@@ -28,15 +36,15 @@ function nextTrackId(kind: Track["kind"], tracks: Track[]) {
 }
 
 function mediaIcon(kind: MediaItem["type"]) {
-	if (kind === "audio") return <MusicIcon className="h-4 w-4 text-neutral-300" aria-hidden />;
-	if (kind === "image") return <ImageIcon className="h-4 w-4 text-neutral-300" aria-hidden />;
-	return <VideoIcon className="h-4 w-4 text-neutral-300" aria-hidden />;
+	if (kind === "audio") return <MusicIcon className="h-4 w-4" aria-hidden />;
+	if (kind === "image") return <ImageIcon className="h-4 w-4" aria-hidden />;
+	return <VideoIcon className="h-4 w-4" aria-hidden />;
 }
 
 function LoadingScreen() {
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-neutral-950 text-neutral-200">
-			<div className="flex items-center gap-3 text-sm">
+		<div className="flex min-h-screen items-center justify-center bg-neutral-950">
+			<div className="flex items-center gap-3">
 				<div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
 				<span>Loading workspace…</span>
 			</div>
@@ -543,7 +551,7 @@ export default function EditorPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-50">
+		<div className="flex min-h-screen flex-col bg-neutral-950">
 			<TopBar
 				projectName={timeline.name}
 				isPlaying={isPlaying}
@@ -569,7 +577,7 @@ export default function EditorPage() {
 						className="flex flex-col border border-neutral-800 bg-neutral-900"
 						style={isPortrait ? undefined : { width: leftWidth, minWidth: MIN_LEFT }}
 					>
-						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-sm font-semibold text-neutral-100 select-none">
+						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-xs font-semibold select-none">
 							Library
 						</div>
 						<div className="flex flex-1 overflow-hidden">
@@ -578,7 +586,7 @@ export default function EditorPage() {
 					</div>
 					{!isPortrait && (
 						<div
-							className="w-1 cursor-col-resize bg-neutral-800/70 transition hover:bg-blue-500/60"
+							className="hover:bg-primary w-1 cursor-col-resize bg-neutral-800/70 transition"
 							onMouseDown={(e) => {
 								e.preventDefault();
 								dragState.current = {
@@ -596,7 +604,7 @@ export default function EditorPage() {
 						className="flex flex-1 flex-col border border-neutral-800 bg-neutral-900"
 						style={isPortrait ? { minHeight: 300 } : undefined}
 					>
-						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-sm font-semibold text-neutral-100 select-none">
+						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-xs font-semibold select-none">
 							Viewer
 						</div>
 						<div className="flex flex-1 overflow-hidden">
@@ -634,7 +642,7 @@ export default function EditorPage() {
 					</div>
 					{!isPortrait && (
 						<div
-							className="w-1 cursor-col-resize bg-neutral-800/70 transition hover:bg-blue-500/60"
+							className="hover:bg-primary w-1 cursor-col-resize bg-neutral-800/70 transition"
 							onMouseDown={(e) => {
 								e.preventDefault();
 								dragState.current = {
@@ -652,7 +660,7 @@ export default function EditorPage() {
 						className="flex flex-col border border-neutral-800 bg-neutral-900"
 						style={isPortrait ? undefined : { width: rightWidth, minWidth: MIN_RIGHT }}
 					>
-						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-sm font-semibold text-neutral-100 select-none">
+						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-xs font-semibold select-none">
 							Inspector
 						</div>
 						<div className="flex flex-1 overflow-hidden">
@@ -665,7 +673,7 @@ export default function EditorPage() {
 					</div>
 				</div>
 				<div
-					className="h-1 cursor-row-resize bg-neutral-800/70 transition hover:bg-blue-500/60"
+					className="hover:bg-primary h-1 cursor-row-resize bg-neutral-800/70 transition"
 					onMouseDown={(e) => {
 						e.preventDefault();
 						dragState.current = {
@@ -682,10 +690,10 @@ export default function EditorPage() {
 					className="flex flex-col gap-2"
 					style={{ height: `calc(100vh - ${topHeight}px - 84px)` }}
 				>
-					<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 text-xs text-neutral-300">
+					<div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
 						<div className="flex items-center gap-2">
-							<button
-								className="border border-neutral-700 bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-100 transition hover:bg-neutral-700"
+							<Button
+								variant="outline"
 								onClick={() => {
 									setTimeline((prev) => {
 										let nextTracks = [...prev.tracks];
@@ -739,19 +747,23 @@ export default function EditorPage() {
 								}}
 							>
 								Add text clip
-							</button>
-							<label className="flex items-center gap-1 text-[11px] text-neutral-300 select-none">
-								<span className="text-neutral-200">Mode</span>
-								<select
-									className="border border-neutral-700 bg-neutral-800 px-2 py-1 text-xs text-neutral-50"
+							</Button>
+							<label className="flex items-center gap-1 text-xs select-none">
+								<span>Mode</span>
+								<Select
 									value={editMode}
-									onChange={(e) => setEditMode(e.target.value as typeof editMode)}
+									onValueChange={(value) => setEditMode(value as typeof editMode)}
 								>
-									<option value="select">Select</option>
-									<option value="transform">Transform</option>
-									<option value="crop">Crop</option>
-									<option value="distort">Distort</option>
-								</select>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="select">Select</SelectItem>
+										<SelectItem value="transform">Transform</SelectItem>
+										<SelectItem value="crop">Crop</SelectItem>
+										<SelectItem value="distort">Distort</SelectItem>
+									</SelectContent>
+								</Select>
 							</label>
 						</div>
 					</div>
