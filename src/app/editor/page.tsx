@@ -9,6 +9,7 @@ import {
 } from "@/lib/client/media-store";
 import { VIDEO_PRESETS } from "@/lib/shared/presets";
 import { Clip, Timeline, Track, validateTimeline } from "@/lib/shared/timeline";
+import { isValidProjectId, projectExistsInLocalStorage } from "@/lib/utils";
 import { TopBar } from "./_components/top-bar";
 import { MediaBrowser, MediaItem, MEDIA_DRAG_TYPE } from "./_components/media-browser";
 import { Viewer } from "./_components/viewer";
@@ -114,6 +115,7 @@ function EditorPageContent() {
 	const [snapEnabled, setSnapEnabled] = useState(true);
 	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort">("select");
 	const [isPortrait, setIsPortrait] = useState(false);
+	const [isValidProject, setIsValidProject] = useState(false);
 	const clipboardRef = useRef<{ clip: Clip; kind: Track["kind"] } | null>(null);
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
@@ -145,6 +147,14 @@ function EditorPageContent() {
 	}, []);
 
 	useEffect(() => {
+		if (!projectId) return;
+
+		// Check if this is a valid, existing project
+		const exists = projectExistsInLocalStorage(projectId);
+		setIsValidProject(exists);
+
+		if (!exists) return;
+
 		const key = `arcumark:timeline:${projectId}`;
 		try {
 			const stored = localStorage.getItem(key);
@@ -164,13 +174,16 @@ function EditorPageContent() {
 	}, [projectId]);
 
 	useEffect(() => {
+		// Only save if this is a valid, existing project
+		if (!isValidProject || !projectId) return;
+
 		const key = `arcumark:timeline:${projectId}`;
 		try {
 			localStorage.setItem(key, JSON.stringify(timeline));
 		} catch (e) {
 			console.error("Failed to persist timeline", e);
 		}
-	}, [timeline, projectId]);
+	}, [timeline, projectId, isValidProject]);
 
 	useEffect(() => {
 		if (!isPlaying) return;
@@ -553,7 +566,7 @@ function EditorPageContent() {
 		return <LoadingScreen />;
 	}
 
-	// Show error if project ID is missing
+	// Show error if project ID is missing, invalid, or doesn't exist
 	if (!projectId) {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-neutral-950">
@@ -563,6 +576,43 @@ function EditorPageContent() {
 						Please provide a project ID in the URL (e.g., /editor?id=your-project-id)
 					</p>
 					<Button onClick={() => router.push("/")}>Go to Home</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (!isValidProjectId(projectId)) {
+		return (
+			<div className="flex min-h-screen items-center justify-center bg-neutral-950">
+				<div className="flex flex-col items-center gap-4 text-center">
+					<h1 className="text-2xl font-bold">Invalid Project ID</h1>
+					<p className="text-muted-foreground">
+						The project ID &ldquo;{projectId}&rdquo; is not a valid format.
+					</p>
+					<p className="text-muted-foreground text-xs">
+						Project IDs must be in UUID v4 format or start with &ldquo;proj_&rdquo;
+					</p>
+					<Button onClick={() => router.push("/")}>Go to Home</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (!isLoading && !isValidProject) {
+		return (
+			<div className="flex min-h-screen items-center justify-center bg-neutral-950">
+				<div className="flex flex-col items-center gap-4 text-center">
+					<h1 className="text-2xl font-bold">Project Not Found</h1>
+					<p className="text-muted-foreground">No project found with ID: {projectId}</p>
+					<p className="text-muted-foreground text-xs">
+						The project may have been deleted or never existed in this browser.
+					</p>
+					<div className="flex gap-2">
+						<Button onClick={() => router.push("/")}>Go to Home</Button>
+						<Button variant="outline" onClick={() => router.push("/projects")}>
+							View All Projects
+						</Button>
+					</div>
 				</div>
 			</div>
 		);

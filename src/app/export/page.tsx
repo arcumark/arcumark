@@ -6,6 +6,7 @@ import { PageShell } from "@/components/page-shell";
 import { readAllMediaRecords, type StoredMediaRecord } from "@/lib/client/media-store";
 import { VIDEO_PRESETS, type VideoPreset } from "@/lib/shared/presets";
 import { Clip, Timeline, validateTimeline } from "@/lib/shared/timeline";
+import { isValidProjectId, projectExistsInLocalStorage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -551,7 +552,7 @@ function ExportPageContent() {
 		? `${timeline.name} • ${timeline.duration.toFixed(1)}s • tracks ${timeline.tracks.length}`
 		: "Timeline not loaded";
 
-	// Show error if project ID is missing
+	// Show error if project ID is missing, invalid, or doesn't exist
 	if (!projectId) {
 		return (
 			<PageShell title="Export" description="Export your video project">
@@ -561,6 +562,43 @@ function ExportPageContent() {
 						Please provide a project ID in the URL (e.g., /export?id=your-project-id)
 					</p>
 					<Button onClick={() => (window.location.href = "/")}>Go to Home</Button>
+				</div>
+			</PageShell>
+		);
+	}
+
+	if (!isValidProjectId(projectId)) {
+		return (
+			<PageShell title="Export" description="Export your video project">
+				<div className="flex flex-col items-center gap-4 rounded-lg border border-dashed p-8 text-center">
+					<h2 className="text-xl font-semibold">Invalid Project ID</h2>
+					<p className="text-muted-foreground">
+						The project ID &ldquo;{projectId}&rdquo; is not a valid format.
+					</p>
+					<p className="text-muted-foreground text-xs">
+						Project IDs must be in UUID v4 format or start with &ldquo;proj_&rdquo;
+					</p>
+					<Button onClick={() => (window.location.href = "/")}>Go to Home</Button>
+				</div>
+			</PageShell>
+		);
+	}
+
+	if (!projectExistsInLocalStorage(projectId)) {
+		return (
+			<PageShell title="Export" description="Export your video project">
+				<div className="flex flex-col items-center gap-4 rounded-lg border border-dashed p-8 text-center">
+					<h2 className="text-xl font-semibold">Project Not Found</h2>
+					<p className="text-muted-foreground">No project found with ID: {projectId}</p>
+					<p className="text-muted-foreground text-xs">
+						The project may have been deleted or never existed in this browser.
+					</p>
+					<div className="flex gap-2">
+						<Button onClick={() => (window.location.href = "/")}>Go to Home</Button>
+						<Button variant="outline" onClick={() => (window.location.href = "/projects")}>
+							View All Projects
+						</Button>
+					</div>
 				</div>
 			</PageShell>
 		);
