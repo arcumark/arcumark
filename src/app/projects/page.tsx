@@ -56,7 +56,7 @@ export default function ProjectsPage() {
 	}, []);
 
 	const handleOpen = (id: string) => {
-		router.push(`/editor/${id}`);
+		router.push(`/editor?id=${id}`);
 	};
 
 	const handleDelete = (id: string) => {

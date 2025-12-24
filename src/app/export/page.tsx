@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { readAllMediaRecords, type StoredMediaRecord } from "@/lib/client/media-store";
 import { VIDEO_PRESETS, type VideoPreset } from "@/lib/shared/presets";
@@ -15,6 +15,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+
+// This page is fully client-side and requires no server-side processing
+export const dynamic = "force-static";
+export const dynamicParams = true;
 
 type LoadedMediaRecord = StoredMediaRecord & { url: string };
 
@@ -42,9 +46,9 @@ function clampOpacity(value: unknown, fallback = 1) {
 	return Math.min(1, Math.max(0, value / 100));
 }
 
-export default function ExportPage() {
-	const params = useParams<{ projectId: string }>();
-	const projectId = params.projectId;
+function ExportPageContent() {
+	const searchParams = useSearchParams();
+	const projectId = searchParams?.get("id");
 
 	const [timeline, setTimeline] = useState<Timeline | null>(null);
 	const [validationResult, setValidationResult] = useState<string | null>(null);
@@ -547,6 +551,21 @@ export default function ExportPage() {
 		? `${timeline.name} • ${timeline.duration.toFixed(1)}s • tracks ${timeline.tracks.length}`
 		: "Timeline not loaded";
 
+	// Show error if project ID is missing
+	if (!projectId) {
+		return (
+			<PageShell title="Export" description="Export your video project">
+				<div className="flex flex-col items-center gap-4 rounded-lg border border-dashed p-8 text-center">
+					<h2 className="text-xl font-semibold">Project ID Required</h2>
+					<p className="text-muted-foreground">
+						Please provide a project ID in the URL (e.g., /export?id=your-project-id)
+					</p>
+					<Button onClick={() => (window.location.href = "/")}>Go to Home</Button>
+				</div>
+			</PageShell>
+		);
+	}
+
 	return (
 		<PageShell
 			title="Export"
@@ -654,14 +673,13 @@ export default function ExportPage() {
 					{exportError && <div className="text-destructive">Error: {exportError}</div>}
 					{downloadUrl && (
 						<div className="flex items-center gap-3">
-							<Button asChild>
-								<a
-									href={downloadUrl}
-									download={`${timeline?.name ?? "arcumark"}_${projectId}.webm`}
-								>
-									Download video (.webm)
-								</a>
-							</Button>
+							<a
+								href={downloadUrl}
+								download={`${timeline?.name ?? "arcumark"}_${projectId}.webm`}
+								className="bg-primary text-primary-foreground hover:bg-primary/80 inline-flex h-8 items-center justify-center gap-1.5 rounded-none border px-2.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50"
+							>
+								Download video (.webm)
+							</a>
 							<div className="text-muted-foreground">Done: {Math.round(progress * 100)}%</div>
 						</div>
 					)}
@@ -669,5 +687,19 @@ export default function ExportPage() {
 			</div>
 			<canvas ref={canvasRef} className="hidden" aria-hidden />
 		</PageShell>
+	);
+}
+
+export default function ExportPage() {
+	return (
+		<Suspense
+			fallback={
+				<PageShell title="Export" description="Loading export page...">
+					<div>Loading...</div>
+				</PageShell>
+			}
+		>
+			<ExportPageContent />
+		</Suspense>
 	);
 }

@@ -53,9 +53,9 @@ export default function Home() {
 			} catch (e) {
 				console.error(e);
 			}
-			router.push(`/editor/${id}?preset=${selectedPreset.id}`);
+			router.push(`/editor?id=${id}&preset=${selectedPreset.id}`);
 		} else {
-			router.push(`/editor/${id}`);
+			router.push(`/editor?id=${id}`);
 		}
 	};
 
