@@ -140,7 +140,7 @@ export class IndexedDBStorage implements TimelineStorage {
 		});
 	}
 
-	async listMedia(projectId?: string): Promise<MediaRecord[]> {
+	async listMedia(_projectId?: string): Promise<MediaRecord[]> {
 		const db = await this.openMediaDb();
 		if (!db) return [];
 

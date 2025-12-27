@@ -1,8 +1,17 @@
 import { createProjectId, validateTimeline } from "@arcumark/shared";
 import { type TimelineStorage } from "@arcumark/shared/storage";
+import type { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 
-export async function handleToolCall(request: any, storage: TimelineStorage) {
-	const { name, arguments: args } = request.params;
+interface ToolArguments {
+	name?: string;
+	duration?: number;
+	projectId?: string;
+	[key: string]: unknown;
+}
+
+export async function handleToolCall(request: CallToolRequest, storage: TimelineStorage) {
+	const { name, arguments: rawArgs } = request.params;
+	const args = (rawArgs || {}) as ToolArguments;
 
 	switch (name) {
 		case "create_project": {
@@ -37,6 +46,17 @@ export async function handleToolCall(request: any, storage: TimelineStorage) {
 		}
 
 		case "get_project": {
+			if (!args.projectId) {
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({ error: "projectId is required" }),
+						},
+					],
+					isError: true,
+				};
+			}
 			const timeline = await storage.getTimeline(args.projectId);
 			if (!timeline) {
 				return {
@@ -60,6 +80,17 @@ export async function handleToolCall(request: any, storage: TimelineStorage) {
 		}
 
 		case "delete_project": {
+			if (!args.projectId) {
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({ error: "projectId is required" }),
+						},
+					],
+					isError: true,
+				};
+			}
 			await storage.deleteTimeline(args.projectId);
 			return {
 				content: [
@@ -72,6 +103,17 @@ export async function handleToolCall(request: any, storage: TimelineStorage) {
 		}
 
 		case "validate_timeline": {
+			if (!args.projectId) {
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({ error: "projectId is required" }),
+						},
+					],
+					isError: true,
+				};
+			}
 			const timeline = await storage.getTimeline(args.projectId);
 			if (!timeline) {
 				return {
