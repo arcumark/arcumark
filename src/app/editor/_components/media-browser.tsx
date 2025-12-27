@@ -73,7 +73,7 @@ export function MediaBrowser({ items, onImport }: Props) {
 			</div>
 			<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
 				<div
-					className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-neutral-700 bg-neutral-950 py-3 text-xs transition hover:border-blue-500"
+					className="hover:border-primary flex w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-neutral-700 bg-neutral-950 py-3 text-xs transition"
 					onClick={() => fileInputRef.current?.click()}
 				>
 					<UploadIcon className="size-4" />
