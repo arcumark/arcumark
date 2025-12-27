@@ -1,4 +1,4 @@
-import { createProjectId, VIDEO_PRESETS } from "@arcumark/shared";
+import { createProjectId, VIDEO_PRESETS, type VideoPreset } from "@arcumark/shared";
 import { createStorage } from "../../utils/storage-factory.js";
 import { logger } from "../../utils/logger.js";
 
@@ -12,7 +12,8 @@ export async function createProjectCommand(options: CreateOptions) {
 		const storage = await createStorage();
 		const id = createProjectId();
 		const name = options.name || `Project ${new Date().toLocaleDateString()}`;
-		const preset = VIDEO_PRESETS.find((p) => p.id === options.preset) || VIDEO_PRESETS[0];
+		const preset: VideoPreset =
+			VIDEO_PRESETS.find((p) => p.id === options.preset) || VIDEO_PRESETS[0];
 
 		const timeline = {
 			id,

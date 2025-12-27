@@ -22,7 +22,7 @@ export async function listProjectsCommand(options: ListOptions) {
 		}
 
 		console.log(`\nFound ${projects.length} project(s):\n`);
-		projects.forEach((project) => {
+		projects.forEach((project: { id: string; name: string }) => {
 			console.log(`  ${project.name}`);
 			console.log(`  ID: ${project.id}\n`);
 		});
