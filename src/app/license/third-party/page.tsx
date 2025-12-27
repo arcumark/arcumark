@@ -115,7 +115,7 @@ export default async function ThirdPartyLicensePage() {
 														href={pkg.repo}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="text-blue-400 hover:underline"
+														className="text-primary hover:underline"
 													>
 														{pkg.repo}
 													</a>

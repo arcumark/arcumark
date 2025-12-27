@@ -483,7 +483,7 @@ export function Viewer({
 												{["top", "bottom", "left", "right"].map((handle) => (
 													<div
 														key={handle}
-														className="absolute bg-blue-500/70"
+														className="border-primary bg-primary/10 absolute"
 														style={{
 															width: handle === "left" || handle === "right" ? "6px" : "100%",
 															height: handle === "top" || handle === "bottom" ? "6px" : "100%",
@@ -525,7 +525,7 @@ export function Viewer({
 											{["tl", "tr", "br", "bl"].map((corner) => (
 												<div
 													key={corner}
-													className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 border border-blue-400 bg-blue-500/80"
+													className="border-primary bg-primary/10 absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 border"
 													style={{
 														left: corner === "tl" || corner === "bl" ? "0%" : "100%",
 														top: corner === "tl" || corner === "tr" ? "0%" : "100%",
