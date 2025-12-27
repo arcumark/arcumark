@@ -369,7 +369,7 @@ export function TimelineView({
 								>
 									{preview?.trackId === track.id && (
 										<div
-											className="absolute top-1 h-9 border border-dashed border-blue-400/70 bg-blue-500/10"
+											className="border-primary/70 bg-primary/10 absolute top-1 h-9 border border-dashed"
 											style={{ left: preview.left, width: preview.width }}
 											aria-hidden
 										/>
@@ -389,7 +389,7 @@ export function TimelineView({
 												key={clip.id}
 												className={`absolute top-1.5 flex h-9 items-center justify-between border px-2 text-xs ${baseBg} ${
 													selectedClipId === clip.id
-														? "border-blue-500 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.8)]"
+														? "border-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.8)]"
 														: "border-neutral-800"
 												}`}
 												style={{ left: clipStart, width: clipWidth }}
