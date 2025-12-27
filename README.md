@@ -2,6 +2,11 @@
 
 Arcumark is a browser-first timeline editor for video, audio, and text overlays. Everything is local: projects are stored in `localStorage`, media in IndexedDB, and exports render to WebM in the browser via `MediaRecorder` + `Canvas` + `AudioContext`. No uploads are required.
 
+**Now available as:**
+- **Web App** - Browser-based editor (Next.js)
+- **CLI Tool** - Command-line project management
+- **MCP Server** - AI integration with Claude Desktop
+
 ## Highlights
 
 - Project presets: pick resolution/fps presets, auto-apply them to the viewer, and reuse the last preset.
@@ -17,13 +22,43 @@ Arcumark is a browser-first timeline editor for video, audio, and text overlays.
 - Tailwind utility classes (no full framework)
 - OpenNext Cloudflare tooling for preview/deploy
 
-## Project layout
+## Monorepo Structure
 
-- `src/app` — routes (editor, export, projects, about, api routes for presets/timeline validation/advice/system health)
-- `src/components` — shared UI shell
-- `src/lib/shared` — timeline/preset types and validation
-- `src/lib/client` — browser-side utilities (IndexedDB media store)
-- `public` — static assets
+This project is organized as a **Bun Workspace**:
+
+```
+arcumark/
+├── packages/
+│   ├── shared/       # Shared types, validation, storage abstraction
+│   ├── web/          # Next.js web application
+│   ├── cli/          # Command-line interface
+│   └── mcp/          # MCP server for AI integration
+└── package.json      # Workspace root
+```
+
+### Package Details
+
+**@arcumark/shared** - Core library
+- Timeline, Track, Clip types
+- Video preset definitions
+- Storage adapters (File, SQLite, IndexedDB)
+- Validation utilities
+
+**@arcumark/web** - Web application
+- Multi-track timeline editor
+- Media library management
+- Real-time preview with Canvas
+- Export to WebM
+
+**@arcumark/cli** - CLI tool
+- Project management (create, list, delete)
+- Timeline validation
+- File or SQLite storage
+
+**@arcumark/mcp** - MCP server
+- Project management tools
+- Timeline operations
+- Integration with Claude Desktop
 
 ## Data storage
 
@@ -41,10 +76,57 @@ Arcumark is a browser-first timeline editor for video, audio, and text overlays.
 
 ## Development
 
+### Initial Setup
+
 ```bash
+# Install all dependencies
 bun install
-bun dev
+
+# Build shared package (required first)
+cd packages/shared && bun run build
+
+# Build CLI (optional)
+cd ../cli && bun run build
+
+# Build MCP (optional)
+cd ../mcp && bun run build
+```
+
+### Web Development
+
+```bash
+# Run web development server
+bun run dev
+# or
+cd packages/web && bun run dev
 # app: http://localhost:3000
+```
+
+### CLI Usage
+
+```bash
+# After building CLI package
+cd packages/cli
+bun link  # Install globally
+
+# Then use anywhere:
+arcumark project create -n "My Project"
+arcumark project list
+```
+
+### MCP Server
+
+Add to Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "arcumark": {
+      "command": "bun",
+      "args": ["/path/to/arcumark/packages/mcp/src/index.ts"]
+    }
+  }
+}
 ```
 
 ## Preview on Cloudflare (OpenNext)

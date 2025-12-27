@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Cache
+.turbo
+.cache
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+bun.lock
+
+# Cloudflare
+.wrangler
+cloudflare-env.d.ts

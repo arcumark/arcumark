@@ -1,0 +1,25 @@
+{
+	"name": "@arcumark/mcp",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"bin": {
+		"arcumark-mcp": "./dist/index.js"
+	},
+	"scripts": {
+		"build": "bun build src/index.ts --outdir dist --target node --format esm && chmod +x dist/index.js",
+		"dev": "bun run src/index.ts",
+		"clean": "rm -rf dist",
+		"typecheck": "tsc --noEmit",
+		"lint": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@arcumark/shared": "workspace:*",
+		"@modelcontextprotocol/sdk": "^1.0.4"
+	},
+	"devDependencies": {
+		"@types/node": "^20",
+		"bun-types": "^1.3.0",
+		"typescript": "^5"
+	}
+}
