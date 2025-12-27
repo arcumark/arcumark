@@ -606,7 +606,7 @@ function ExportPageContent() {
 			maxWidth="max-w-5xl"
 		>
 			<div className="text-foreground grid gap-4 text-xs">
-				<div className="flex flex-wrap items-center gap-2 border border-neutral-800 bg-neutral-900 px-4 py-3">
+				<div className="border-border bg-card flex flex-wrap items-center gap-2 border px-4 py-3">
 					<div className="font-semibold">Project {projectId}</div>
 					<div className="text-muted-foreground">{summary}</div>
 					<div className="ml-auto flex items-center gap-2">
@@ -627,7 +627,7 @@ function ExportPageContent() {
 							</SelectContent>
 						</Select>
 						{activePreset && (
-							<div className="text-muted-foreground border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs">
+							<div className="text-muted-foreground border-border bg-background border px-2 py-1 text-xs">
 								{activePreset.aspectRatioLabel} • {activePreset.width}x{activePreset.height} @{" "}
 								{activePreset.fps}fps
 							</div>
@@ -635,7 +635,7 @@ function ExportPageContent() {
 					</div>
 				</div>
 
-				<div className="grid gap-3 border border-neutral-800 bg-neutral-900 p-4">
+				<div className="border-border bg-card grid gap-3 border p-4">
 					<div className="flex flex-wrap items-center gap-2">
 						<Button onClick={handleValidate} disabled={loading || isExporting} variant="default">
 							Validate timeline
@@ -662,7 +662,7 @@ function ExportPageContent() {
 						</div>
 					)}
 					{adviceResult && adviceResult.length > 0 && (
-						<div className="text-foreground grid gap-2 border border-neutral-800 bg-neutral-950/70 p-3 text-xs">
+						<div className="text-foreground border-border bg-background/70 grid gap-2 border p-3 text-xs">
 							<div className="text-muted-foreground">Advice</div>
 							<ul className="list-disc space-y-1 pl-5">
 								{adviceResult.map((item, idx) => (
@@ -673,7 +673,7 @@ function ExportPageContent() {
 					)}
 				</div>
 
-				<div className="text-foreground grid gap-2 border border-neutral-800 bg-neutral-900 p-4 text-xs">
+				<div className="text-foreground border-border bg-card grid gap-2 border p-4 text-xs">
 					<div className="flex flex-wrap items-center gap-3">
 						<div className="font-semibold">Media status</div>
 						<div className="text-muted-foreground">
@@ -691,12 +691,12 @@ function ExportPageContent() {
 					)}
 				</div>
 
-				<div className="text-foreground grid gap-2 border border-neutral-800 bg-neutral-900 p-4 text-xs">
+				<div className="text-foreground border-border bg-card grid gap-2 border p-4 text-xs">
 					<div className="flex items-center justify-between">
 						<div className="font-semibold">Export status</div>
 						{isExporting && <div className="text-muted-foreground text-xs">In progress…</div>}
 					</div>
-					<div className="h-2 overflow-hidden bg-neutral-800">
+					<div className="bg-border h-2 overflow-hidden">
 						<div
 							className="bg-primary h-full transition-[width]"
 							style={{ width: `${Math.min(100, Math.floor(progress * 100))}%` }}

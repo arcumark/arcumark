@@ -29,7 +29,7 @@ export function TopBar({
 	onLoopToggle,
 }: Props) {
 	return (
-		<div className="flex h-12 items-center gap-3 border-b border-neutral-800 bg-neutral-900 px-3">
+		<div className="border-border bg-card flex h-12 items-center gap-3 border-b px-3">
 			<Label>Arcumark</Label>
 			<Label className="font-mono">{projectName}</Label>
 			<Button variant="default" onClick={onExport}>

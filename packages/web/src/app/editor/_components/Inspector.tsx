@@ -86,7 +86,7 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 	if (!clip) {
 		return (
 			<div className="flex h-full flex-col">
-				<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
+				<div className="bg-card grid flex-1 gap-3 overflow-auto p-3">
 					<div className="text-center text-xs">No clip selected</div>
 				</div>
 			</div>
@@ -140,7 +140,7 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
+			<div className="bg-card grid flex-1 gap-3 overflow-auto p-3">
 				<Label className="text-xs font-semibold">Clip</Label>
 				<div className="grid gap-2">
 					<Label>Name</Label>

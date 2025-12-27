@@ -222,10 +222,10 @@ export function TimelineView({
 	]);
 
 	return (
-		<div className="flex h-full flex-col border border-neutral-800 bg-neutral-900">
+		<div className="border-border bg-card flex h-full flex-col border">
 			<div className="grid flex-1 grid-cols-[160px_1fr] overflow-hidden">
-				<div className="sticky left-0 flex h-full min-h-0 flex-col border-r border-neutral-800 bg-neutral-900">
-					<div className="flex h-[36px] items-center justify-between border-b border-neutral-800 pr-2 pl-3 text-xs">
+				<div className="border-border bg-card sticky left-0 flex h-full min-h-0 flex-col border-r">
+					<div className="border-border flex h-[36px] items-center justify-between border-b pr-2 pl-3 text-xs">
 						<span>Ruler</span>
 						<label className="flex items-center gap-1 select-none">
 							<Checkbox
@@ -249,7 +249,7 @@ export function TimelineView({
 							{timeline.tracks.map((track) => (
 								<div
 									key={track.id}
-									className="flex h-12 items-center justify-between border-b border-neutral-800 px-3"
+									className="border-border flex h-12 items-center justify-between border-b px-3"
 								>
 									<div className="flex items-center gap-2">
 										<div className={trackBadgeClass(track.kind)} />
@@ -298,7 +298,7 @@ export function TimelineView({
 						</div>
 					</div>
 				</div>
-				<div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+				<div className="bg-background relative flex h-full min-h-0 flex-col overflow-hidden">
 					<div
 						ref={(el) => {
 							rightScrollRef.current = el;
@@ -332,7 +332,7 @@ export function TimelineView({
 						}}
 					>
 						<div
-							className="sticky top-0 z-20 flex h-[36px] items-center border-b border-neutral-800 bg-neutral-900 text-xs"
+							className="border-border bg-card sticky top-0 z-20 flex h-[36px] items-center border-b text-xs"
 							style={{ width }}
 						>
 							{markers.map((value) => {
@@ -340,7 +340,7 @@ export function TimelineView({
 								return (
 									<div
 										key={value}
-										className="flex h-[36px] items-center border-r border-neutral-800 pl-1 select-none"
+										className="border-border flex h-[36px] items-center border-r pl-1 select-none"
 										style={{ width: markWidth }}
 									>
 										{value}s
@@ -363,10 +363,7 @@ export function TimelineView({
 								}}
 							/>
 							{timeline.tracks.map((track) => (
-								<div
-									key={track.id}
-									className="relative h-12 border-b border-neutral-900 select-none"
-								>
+								<div key={track.id} className="border-card relative h-12 border-b select-none">
 									{preview?.trackId === track.id && (
 										<div
 											className="border-primary/70 bg-primary/10 absolute top-1 h-9 border border-dashed"
@@ -390,7 +387,7 @@ export function TimelineView({
 												className={`absolute top-1.5 flex h-9 items-center justify-between border px-2 text-xs ${baseBg} ${
 													selectedClipId === clip.id
 														? "border-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.8)]"
-														: "border-neutral-800"
+														: "border-border"
 												}`}
 												style={{ left: clipStart, width: clipWidth }}
 												onClick={(e) => {

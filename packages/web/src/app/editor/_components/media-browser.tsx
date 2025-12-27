@@ -46,7 +46,7 @@ export function MediaBrowser({ items, onImport }: Props) {
 
 	return (
 		<div className="flex h-full flex-1 flex-col">
-			<div className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900 px-3 py-2">
+			<div className="border-border bg-card flex items-center gap-2 border-b px-3 py-2">
 				<Button variant="outline" onClick={() => fileInputRef.current?.click()}>
 					Import
 				</Button>
@@ -71,9 +71,9 @@ export function MediaBrowser({ items, onImport }: Props) {
 					))}
 				</div>
 			</div>
-			<div className="grid flex-1 gap-3 overflow-auto bg-neutral-900 p-3">
+			<div className="bg-card grid flex-1 gap-3 overflow-auto p-3">
 				<div
-					className="hover:border-primary flex w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-neutral-700 bg-neutral-950 py-3 text-xs transition"
+					className="hover:border-primary border-muted bg-background flex w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed py-3 text-xs transition"
 					onClick={() => fileInputRef.current?.click()}
 				>
 					<UploadIcon className="size-4" />
@@ -83,7 +83,7 @@ export function MediaBrowser({ items, onImport }: Props) {
 					const isOpen = sections[category];
 					const itemsForSection = grouped[category];
 					return (
-						<div key={category} className="border border-neutral-800 bg-neutral-950">
+						<div key={category} className="border-border bg-background border">
 							<button
 								className="flex w-full items-center justify-between px-3 py-2 text-left text-xs"
 								onClick={() => setSections((prev) => ({ ...prev, [category]: !prev[category] }))}
@@ -95,21 +95,21 @@ export function MediaBrowser({ items, onImport }: Props) {
 								<span>{itemsForSection.length}</span>
 							</button>
 							{isOpen && (
-								<div className="border-t border-neutral-800 p-2">
+								<div className="border-border border-t p-2">
 									{itemsForSection.length === 0 ? (
 										<div className="text-center text-xs">No items.</div>
 									) : viewMode === "list" ? (
 										itemsForSection.map((item) => (
 											<div
 												key={item.id}
-												className="mb-2 grid grid-cols-[56px_1fr] items-center gap-2 border border-neutral-800 bg-neutral-950 p-2 last:mb-0"
+												className="border-border bg-background mb-2 grid grid-cols-[56px_1fr] items-center gap-2 border p-2 last:mb-0"
 												draggable
 												onDragStart={(e) => {
 													e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
 													e.dataTransfer.effectAllowed = "copy";
 												}}
 											>
-												<div className="flex h-12 w-14 items-center justify-center border border-neutral-800 bg-neutral-900">
+												<div className="border-border bg-card flex h-12 w-14 items-center justify-center border">
 													{item.icon}
 												</div>
 												<div className="flex min-w-0 flex-col gap-1 text-xs">
@@ -126,14 +126,14 @@ export function MediaBrowser({ items, onImport }: Props) {
 											{itemsForSection.map((item) => (
 												<div
 													key={item.id}
-													className="flex flex-col gap-2 border border-neutral-800 bg-neutral-950 p-2 text-xs"
+													className="border-border bg-background flex flex-col gap-2 border p-2 text-xs"
 													draggable
 													onDragStart={(e) => {
 														e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
 														e.dataTransfer.effectAllowed = "copy";
 													}}
 												>
-													<div className="flex h-24 items-center justify-center border border-neutral-800 bg-neutral-900">
+													<div className="border-border bg-card flex h-24 items-center justify-center border">
 														{item.icon}
 													</div>
 													<div className="flex items-center justify-between font-semibold">
@@ -149,14 +149,14 @@ export function MediaBrowser({ items, onImport }: Props) {
 											{itemsForSection.map((item) => (
 												<div
 													key={item.id}
-													className="flex flex-col items-center gap-1 border border-neutral-800 bg-neutral-950 p-2 text-xs"
+													className="border-border bg-background flex flex-col items-center gap-1 border p-2 text-xs"
 													draggable
 													onDragStart={(e) => {
 														e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
 														e.dataTransfer.effectAllowed = "copy";
 													}}
 												>
-													<div className="flex h-12 w-12 items-center justify-center overflow-hidden border border-neutral-800 bg-neutral-900">
+													<div className="border-border bg-card flex h-12 w-12 items-center justify-center overflow-hidden border">
 														<span className="truncate">{item.icon}</span>
 													</div>
 													<div className="w-full truncate text-center">{item.name}</div>

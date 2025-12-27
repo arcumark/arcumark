@@ -48,7 +48,7 @@ function mediaIcon(kind: MediaItem["type"]) {
 
 function LoadingScreen() {
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-neutral-950">
+		<div className="bg-background flex min-h-screen items-center justify-center">
 			<div className="flex items-center gap-3">
 				<div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
 				<span>Loading workspace…</span>
@@ -570,7 +570,7 @@ function EditorPageContent() {
 	// Show error if project ID is missing, invalid, or doesn't exist
 	if (!projectId) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-neutral-950">
+			<div className="bg-background flex min-h-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4 text-center">
 					<h1 className="text-2xl font-bold">Project ID Required</h1>
 					<p className="text-muted-foreground">
@@ -584,7 +584,7 @@ function EditorPageContent() {
 
 	if (!isValidProjectId(projectId)) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-neutral-950">
+			<div className="bg-background flex min-h-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4 text-center">
 					<h1 className="text-2xl font-bold">Invalid Project ID</h1>
 					<p className="text-muted-foreground">
@@ -601,7 +601,7 @@ function EditorPageContent() {
 
 	if (!isLoading && !isValidProject) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-neutral-950">
+			<div className="bg-background flex min-h-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4 text-center">
 					<h1 className="text-2xl font-bold">Project Not Found</h1>
 					<p className="text-muted-foreground">No project found with ID: {projectId}</p>
@@ -620,7 +620,7 @@ function EditorPageContent() {
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col bg-neutral-950">
+		<div className="bg-background flex min-h-screen flex-col">
 			<TopBar
 				projectName={timeline.name}
 				isPlaying={isPlaying}
@@ -643,10 +643,10 @@ function EditorPageContent() {
 					style={{ height: isPortrait ? undefined : topHeight }}
 				>
 					<div
-						className="flex flex-col border border-neutral-800 bg-neutral-900"
+						className="border-border bg-card flex flex-col border"
 						style={isPortrait ? undefined : { width: leftWidth, minWidth: MIN_LEFT }}
 					>
-						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-xs font-semibold select-none">
+						<div className="border-border bg-card flex h-8 items-center border-b px-3 text-xs font-semibold select-none">
 							Library
 						</div>
 						<div className="flex flex-1 overflow-hidden">
@@ -655,7 +655,7 @@ function EditorPageContent() {
 					</div>
 					{!isPortrait && (
 						<div
-							className="hover:bg-primary w-1 cursor-col-resize bg-neutral-800/70 transition"
+							className="hover:bg-primary bg-border/70 w-1 cursor-col-resize transition"
 							onMouseDown={(e) => {
 								e.preventDefault();
 								dragState.current = {
@@ -670,10 +670,10 @@ function EditorPageContent() {
 						/>
 					)}
 					<div
-						className="flex flex-1 flex-col border border-neutral-800 bg-neutral-900"
+						className="border-border bg-card flex flex-1 flex-col border"
 						style={isPortrait ? { minHeight: 300 } : undefined}
 					>
-						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-xs font-semibold select-none">
+						<div className="border-border bg-card flex h-8 items-center border-b px-3 text-xs font-semibold select-none">
 							Viewer
 						</div>
 						<div className="flex flex-1 overflow-hidden">
@@ -711,7 +711,7 @@ function EditorPageContent() {
 					</div>
 					{!isPortrait && (
 						<div
-							className="hover:bg-primary w-1 cursor-col-resize bg-neutral-800/70 transition"
+							className="hover:bg-primary bg-border/70 w-1 cursor-col-resize transition"
 							onMouseDown={(e) => {
 								e.preventDefault();
 								dragState.current = {
@@ -726,10 +726,10 @@ function EditorPageContent() {
 						/>
 					)}
 					<div
-						className="flex flex-col border border-neutral-800 bg-neutral-900"
+						className="border-border bg-card flex flex-col border"
 						style={isPortrait ? undefined : { width: rightWidth, minWidth: MIN_RIGHT }}
 					>
-						<div className="flex h-8 items-center border-b border-neutral-800 bg-neutral-900 px-3 text-xs font-semibold select-none">
+						<div className="border-border bg-card flex h-8 items-center border-b px-3 text-xs font-semibold select-none">
 							Inspector
 						</div>
 						<div className="flex flex-1 overflow-hidden">
@@ -742,7 +742,7 @@ function EditorPageContent() {
 					</div>
 				</div>
 				<div
-					className="hover:bg-primary h-1 cursor-row-resize bg-neutral-800/70 transition"
+					className="hover:bg-primary bg-border/70 h-1 cursor-row-resize transition"
 					onMouseDown={(e) => {
 						e.preventDefault();
 						dragState.current = {

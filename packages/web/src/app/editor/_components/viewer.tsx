@@ -344,7 +344,7 @@ export function Viewer({
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			<div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900 px-3 py-2 text-xs">
+			<div className="border-border bg-card flex items-center justify-between border-b px-3 py-2 text-xs">
 				<div>Viewer</div>
 				<div className="flex items-center gap-2">
 					<Select
@@ -368,15 +368,15 @@ export function Viewer({
 					</Select>
 				</div>
 			</div>
-			<div className="flex flex-1 flex-col gap-3 overflow-hidden bg-neutral-900 p-3">
-				<div className="relative flex min-h-[200px] flex-1 flex-col border border-neutral-800 bg-neutral-950">
+			<div className="bg-card flex flex-1 flex-col gap-3 overflow-hidden p-3">
+				<div className="border-border bg-background relative flex min-h-[200px] flex-1 flex-col border">
 					<div className="absolute top-0 left-0 z-10 flex w-full items-center gap-2 px-4 pt-3 pb-2 font-mono text-xs select-none">
 						{activePreset && (
-							<div className="border border-neutral-800 bg-neutral-900/90 px-2 py-1">
+							<div className="border-border bg-card/90 border px-2 py-1">
 								{activePreset.aspectRatioLabel} • {activePreset.width}x{activePreset.height}
 							</div>
 						)}
-						<div className="border border-neutral-800 bg-neutral-900/90 px-2 py-1 text-right">
+						<div className="border-border bg-card/90 border px-2 py-1 text-right">
 							{formatTimecode(currentTime)}
 						</div>
 					</div>
@@ -648,7 +648,7 @@ export function Viewer({
 					</div>
 				</div>
 				<div
-					className="relative h-6 flex-none cursor-pointer border border-neutral-800 bg-neutral-900"
+					className="border-border bg-card relative h-6 flex-none cursor-pointer border"
 					ref={scrubRef}
 					onClick={handleScrub}
 					onMouseDown={(e) => {
@@ -656,7 +656,7 @@ export function Viewer({
 						handleScrub(e);
 					}}
 				>
-					<div className="absolute top-1/2 right-0 left-0 h-[2px] -translate-y-1/2 bg-neutral-700" />
+					<div className="bg-muted absolute top-1/2 right-0 left-0 h-[2px] -translate-y-1/2" />
 					<div
 						className="bg-primary absolute top-0 h-full w-[2px]"
 						style={{ left: `${(duration === 0 ? 0 : (currentTime / duration) * 100).toFixed(3)}%` }}

@@ -85,8 +85,8 @@ export default async function ThirdPartyLicensePage() {
 	const packages = await collectPackages();
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 py-12 text-neutral-50">
-			<Card className="w-full max-w-3xl border border-neutral-800 bg-neutral-900">
+		<div className="bg-background text-foreground flex min-h-screen items-center justify-center px-6 py-12">
+			<Card className="w-full max-w-3xl">
 				<CardHeader>
 					<CardTitle>Third-Party Licenses</CardTitle>
 					<CardDescription>A list of third-party dependencies used by Arcumark.</CardDescription>
@@ -120,10 +120,10 @@ export default async function ThirdPartyLicensePage() {
 														{pkg.repo}
 													</a>
 												) : (
-													<span className="text-neutral-400">{pkg.repo}</span>
+													<span className="text-muted-foreground">{pkg.repo}</span>
 												)
 											) : (
-												<span className="text-neutral-400">N/A</span>
+												<span className="text-muted-foreground">N/A</span>
 											)}
 										</TableCell>
 									</TableRow>
