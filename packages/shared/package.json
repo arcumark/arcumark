@@ -23,7 +23,7 @@
 		"build": "bun build src/index.ts --outdir dist --target node --format esm && tsc --emitDeclarationOnly",
 		"clean": "rm -rf dist",
 		"typecheck": "tsc --noEmit",
-		"lint": "tsc --noEmit"
+		"lint": "eslint && tsc --noEmit"
 	},
 	"dependencies": {
 		"better-sqlite3": "^11.7.0"

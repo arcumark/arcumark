@@ -11,7 +11,7 @@
 		"dev": "bun run src/index.ts",
 		"clean": "rm -rf dist",
 		"typecheck": "tsc --noEmit",
-		"lint": "tsc --noEmit"
+		"lint": "eslint && tsc --noEmit"
 	},
 	"dependencies": {
 		"@arcumark/shared": "workspace:*",
