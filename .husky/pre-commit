@@ -1,2 +1,1 @@
-bun lint
-bun format:check
+bunx lint-staged
