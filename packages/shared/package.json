@@ -1,10 +1,30 @@
 {
 	"name": "@arcumark/shared",
 	"version": "0.1.0",
-	"private": true,
+	"description": "Shared utilities and types for Arcumark",
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"keywords": [
+		"arcumark",
+		"shared",
+		"utilities",
+		"markdown"
+	],
+	"homepage": "https://github.com/arcumark/arcumark#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/arcumark/arcumark.git",
+		"directory": "packages/shared"
+	},
+	"license": "MIT",
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",

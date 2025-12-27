@@ -1,10 +1,30 @@
 {
 	"name": "@arcumark/mcp",
 	"version": "0.1.0",
-	"private": true,
+	"description": "Model Context Protocol server for Arcumark",
 	"type": "module",
 	"bin": {
 		"arcumark-mcp": "./dist/index.js"
+	},
+	"files": [
+		"dist"
+	],
+	"keywords": [
+		"arcumark",
+		"mcp",
+		"model-context-protocol",
+		"markdown"
+	],
+	"homepage": "https://github.com/arcumark/arcumark#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/arcumark/arcumark.git",
+		"directory": "packages/mcp"
+	},
+	"license": "MIT",
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
 	},
 	"scripts": {
 		"build": "bun build src/index.ts --outdir dist --target node --format esm && chmod +x dist/index.js",
