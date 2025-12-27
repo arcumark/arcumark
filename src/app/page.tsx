@@ -47,12 +47,28 @@ export default function Home() {
 
 	const handleNewProject = () => {
 		const id = createProjectId();
-		if (selectedPreset) {
-			try {
+
+		// Create default timeline in localStorage before redirecting
+		const defaultTimeline = {
+			id,
+			name: "Project",
+			duration: 60,
+			tracks: [],
+		};
+
+		try {
+			localStorage.setItem(`arcumark:timeline:${id}`, JSON.stringify(defaultTimeline));
+
+			if (selectedPreset) {
 				localStorage.setItem("arcumark:lastPreset", selectedPreset.id);
-			} catch (e) {
-				console.error(e);
 			}
+		} catch (e) {
+			console.error("Failed to create project", e);
+			return;
+		}
+
+		// Navigate to editor with the new project
+		if (selectedPreset) {
 			router.push(`/editor?id=${id}&preset=${selectedPreset.id}`);
 		} else {
 			router.push(`/editor?id=${id}`);
