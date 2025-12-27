@@ -3,6 +3,7 @@
 Arcumark is a browser-first timeline editor for video, audio, and text overlays. Everything is local: projects are stored in `localStorage`, media in IndexedDB, and exports render to WebM in the browser via `MediaRecorder` + `Canvas` + `AudioContext`. No uploads are required.
 
 **Now available as:**
+
 - **Web App** - Browser-based editor (Next.js)
 - **CLI Tool** - Command-line project management
 - **MCP Server** - AI integration with Claude Desktop
@@ -39,23 +40,27 @@ arcumark/
 ### Package Details
 
 **@arcumark/shared** - Core library
+
 - Timeline, Track, Clip types
 - Video preset definitions
 - Storage adapters (File, SQLite, IndexedDB)
 - Validation utilities
 
 **@arcumark/web** - Web application
+
 - Multi-track timeline editor
 - Media library management
 - Real-time preview with Canvas
 - Export to WebM
 
 **@arcumark/cli** - CLI tool
+
 - Project management (create, list, delete)
 - Timeline validation
 - File or SQLite storage
 
 **@arcumark/mcp** - MCP server
+
 - Project management tools
 - Timeline operations
 - Integration with Claude Desktop
@@ -120,26 +125,71 @@ Add to Claude Desktop config (`claude_desktop_config.json`):
 
 ```json
 {
-  "mcpServers": {
-    "arcumark": {
-      "command": "bun",
-      "args": ["/path/to/arcumark/packages/mcp/src/index.ts"]
-    }
-  }
+	"mcpServers": {
+		"arcumark": {
+			"command": "bun",
+			"args": ["/path/to/arcumark/packages/mcp/src/index.ts"]
+		}
+	}
 }
 ```
 
-## Preview on Cloudflare (OpenNext)
+## Deployment to Cloudflare Workers
+
+Arcumark web app can be deployed to Cloudflare Workers using OpenNext Cloudflare.
+
+### Prerequisites
+
+- Cloudflare account
+- `wrangler` configured with your Cloudflare credentials
+
+### Commands
+
+From the project root:
 
 ```bash
-bun preview
+# Build for Cloudflare Workers
+bun run cf:build
+
+# Deploy to Cloudflare Workers (production)
+bun run cf:deploy
+
+# Upload to Cloudflare Workers (with specific settings)
+bun run cf:upload
+
+# Preview locally with Cloudflare Workers environment
+bun run cf:preview
+
+# Build and deploy in one command
+bun run deploy
+
+# Build and upload in one command
+bun run upload
 ```
 
-## Deploy
+### Step-by-step Deployment
 
-```bash
-bun deploy
-```
+1. **Install dependencies and build**
+
+   ```bash
+   bun install
+   bun run build
+   ```
+
+2. **Configure Cloudflare (if first time)**
+
+   ```bash
+   cd packages/web
+   npx wrangler login
+   ```
+
+3. **Deploy to Cloudflare Workers**
+   ```bash
+   # From root directory
+   bun run deploy
+   ```
+
+Your app will be deployed to Cloudflare Workers and accessible via the URL provided by Wrangler.
 
 ## Environment and requirements
 

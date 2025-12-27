@@ -18,9 +18,13 @@
 		"format:check": "prettier --check \"packages/**/*.{ts,tsx,json}\"",
 		"typecheck": "bun run --filter '@arcumark/*' typecheck",
 		"clean": "bun run --filter '@arcumark/*' clean && rm -rf node_modules",
-		"deploy": "bun run --filter @arcumark/web deploy",
-		"upload": "bun run --filter @arcumark/web upload",
-		"preview": "bun run --filter @arcumark/web preview",
+		"cf:build": "cd packages/web && bunx opennextjs-cloudflare build",
+		"cf:deploy": "cd packages/web && bunx opennextjs-cloudflare deploy",
+		"cf:upload": "cd packages/web && bunx opennextjs-cloudflare upload",
+		"cf:preview": "cd packages/web && bunx opennextjs-cloudflare preview",
+		"deploy": "bun run cf:build && bun run cf:deploy",
+		"upload": "bun run cf:build && bun run cf:upload",
+		"preview": "bun run cf:build && bun run cf:preview",
 		"prepare": "husky"
 	},
 	"dependencies": {
