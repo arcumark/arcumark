@@ -1,4 +1,5 @@
-import { createProjectId, validateTimeline, type TimelineStorage } from "@arcumark/shared";
+import { createProjectId, validateTimeline } from "@arcumark/shared";
+import { type TimelineStorage } from "@arcumark/shared/storage";
 
 export async function handleToolCall(request: any, storage: TimelineStorage) {
 	const { name, arguments: args } = request.params;

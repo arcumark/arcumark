@@ -1,1 +1,1 @@
-export * from "./video-presets.js";
+export * from "./video-presets";

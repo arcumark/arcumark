@@ -1,9 +1,5 @@
-import {
-	FileStorage,
-	SQLiteStorage,
-	type StorageConfig,
-	type TimelineStorage,
-} from "@arcumark/shared";
+import { FileStorage, SQLiteStorage, type TimelineStorage } from "@arcumark/shared/storage";
+import { type StorageConfig } from "@arcumark/shared";
 import { loadConfig } from "./config.js";
 
 export async function createStorage(): Promise<TimelineStorage> {

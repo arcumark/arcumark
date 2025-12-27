@@ -1,4 +1,4 @@
-import { FileStorage, type TimelineStorage } from "@arcumark/shared";
+import { FileStorage, type TimelineStorage } from "@arcumark/shared/storage";
 import { homedir } from "os";
 import path from "path";
 
