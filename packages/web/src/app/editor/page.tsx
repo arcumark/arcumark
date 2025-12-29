@@ -12,6 +12,8 @@ import { VIDEO_PRESETS } from "@arcumark/shared";
 import { Clip, Timeline, Track, validateTimeline } from "@arcumark/shared";
 import { isValidProjectId, projectExistsInLocalStorage } from "@/lib/utils";
 import type { EditMode } from "@/lib/shared/editor";
+import { HistoryStack } from "@/lib/project/history";
+import { VersionManager } from "@/lib/project/version-manager";
 import { TopBar } from "./_components/top-bar";
 import {
 	MediaBrowser,
@@ -126,7 +128,12 @@ function EditorPageContent() {
 	const [isPortrait, setIsPortrait] = useState(false);
 	const [isValidProject, setIsValidProject] = useState(false);
 	const [autoScrollTimeline, setAutoScrollTimeline] = useState(false);
+	const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
 	const clipboardRef = useRef<{ clip: Clip; kind: Track["kind"] } | null>(null);
+	const historyStackRef = useRef<HistoryStack | null>(null);
+	const versionManagerRef = useRef<VersionManager | null>(null);
+	const isRecordingHistoryRef = useRef(false);
+	const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
 		startX: number;
@@ -159,6 +166,10 @@ function EditorPageContent() {
 	useEffect(() => {
 		if (!projectId) return;
 
+		// Initialize history stack and version manager
+		historyStackRef.current = new HistoryStack(50);
+		versionManagerRef.current = new VersionManager(projectId, 20);
+
 		// Check if this is a valid, existing project
 		const exists = projectExistsInLocalStorage(projectId);
 		setIsValidProject(exists);
@@ -172,10 +183,22 @@ function EditorPageContent() {
 				const parsed = JSON.parse(stored) as Timeline;
 				const validation = validateTimeline(parsed);
 				if (validation.ok && validation.timeline.id === projectId) {
+					isRecordingHistoryRef.current = false;
 					setTimeline(validation.timeline);
 					setSelectedClipId(null);
 					setCurrentTime(0);
 					setIsPlaying(false);
+					// Record initial state in history
+					setTimeout(() => {
+						if (historyStackRef.current) {
+							historyStackRef.current.push({
+								timeline: validation.timeline,
+								timestamp: Date.now(),
+								description: "Initial load",
+							});
+						}
+						isRecordingHistoryRef.current = true;
+					}, 100);
 				}
 			}
 		} catch (e) {
@@ -183,17 +206,146 @@ function EditorPageContent() {
 		}
 	}, [projectId]);
 
+	// Record timeline changes in history
+	useEffect(() => {
+		if (!isRecordingHistoryRef.current || !historyStackRef.current) return;
+		if (!isValidProject || !projectId) return;
+
+		// Record in history
+		historyStackRef.current.push({
+			timeline: JSON.parse(JSON.stringify(timeline)), // Deep clone
+			timestamp: Date.now(),
+		});
+	}, [timeline, projectId, isValidProject]);
+
+	// Auto-save with debounce
 	useEffect(() => {
 		// Only save if this is a valid, existing project
 		if (!isValidProject || !projectId) return;
 
-		const key = `arcumark:timeline:${projectId}`;
-		try {
-			localStorage.setItem(key, JSON.stringify(timeline));
-		} catch (e) {
-			console.error("Failed to persist timeline", e);
+		setSaveStatus("saving");
+
+		// Clear existing timeout
+		if (saveTimeoutRef.current) {
+			clearTimeout(saveTimeoutRef.current);
 		}
+
+		// Debounce save operation (500ms)
+		saveTimeoutRef.current = setTimeout(() => {
+			const key = `arcumark:timeline:${projectId}`;
+			try {
+				localStorage.setItem(key, JSON.stringify(timeline));
+				setSaveStatus("saved");
+			} catch (e) {
+				console.error("Failed to persist timeline", e);
+				setSaveStatus("unsaved");
+			}
+		}, 500);
+
+		return () => {
+			if (saveTimeoutRef.current) {
+				clearTimeout(saveTimeoutRef.current);
+			}
+		};
 	}, [timeline, projectId, isValidProject]);
+
+	// Keyboard shortcuts for Undo/Redo
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Ctrl+Z or Cmd+Z for Undo
+			if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+				e.preventDefault();
+				if (historyStackRef.current?.canUndo()) {
+					const state = historyStackRef.current.undo();
+					if (state) {
+						isRecordingHistoryRef.current = false;
+						setTimeline(state.timeline);
+						setTimeout(() => {
+							isRecordingHistoryRef.current = true;
+						}, 100);
+					}
+				}
+			}
+			// Ctrl+Shift+Z or Cmd+Shift+Z for Redo
+			if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
+				e.preventDefault();
+				if (historyStackRef.current?.canRedo()) {
+					const state = historyStackRef.current.redo();
+					if (state) {
+						isRecordingHistoryRef.current = false;
+						setTimeline(state.timeline);
+						setTimeout(() => {
+							isRecordingHistoryRef.current = true;
+						}, 100);
+					}
+				}
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, []);
+
+	const handleUndo = useCallback(() => {
+		if (historyStackRef.current?.canUndo()) {
+			const state = historyStackRef.current.undo();
+			if (state) {
+				isRecordingHistoryRef.current = false;
+				setTimeline(state.timeline);
+				setTimeout(() => {
+					isRecordingHistoryRef.current = true;
+				}, 100);
+			}
+		}
+	}, []);
+
+	const handleRedo = useCallback(() => {
+		if (historyStackRef.current?.canRedo()) {
+			const state = historyStackRef.current.redo();
+			if (state) {
+				isRecordingHistoryRef.current = false;
+				setTimeline(state.timeline);
+				setTimeout(() => {
+					isRecordingHistoryRef.current = true;
+				}, 100);
+			}
+		}
+	}, []);
+
+	const [versions, setVersions] = useState<
+		Array<{ id: string; timestamp: number; description?: string }>
+	>([]);
+
+	useEffect(() => {
+		if (!versionManagerRef.current) return;
+		setVersions(versionManagerRef.current.getVersions());
+	}, [projectId]);
+
+	const handleSaveVersion = useCallback(() => {
+		if (!versionManagerRef.current || !projectId) return;
+		const description = prompt("Version description (optional):");
+		const versionId = versionManagerRef.current.saveVersion(timeline, description || undefined);
+		alert(`Version saved: ${versionId}`);
+		// Refresh versions list
+		setVersions(versionManagerRef.current.getVersions());
+	}, [timeline, projectId]);
+
+	const handleRestoreVersion = useCallback((versionId: string) => {
+		if (!versionManagerRef.current) return;
+		const restored = versionManagerRef.current.restoreVersion(versionId);
+		if (restored) {
+			if (confirm("Restore this version? Current changes will be lost.")) {
+				isRecordingHistoryRef.current = false;
+				setTimeline(restored);
+				setTimeout(() => {
+					isRecordingHistoryRef.current = true;
+				}, 100);
+			}
+		}
+	}, []);
+
+	const canUndo = historyStackRef.current?.canUndo() ?? false;
+	const canRedo = historyStackRef.current?.canRedo() ?? false;
 
 	useEffect(() => {
 		if (!isPlaying) return;
@@ -785,6 +937,10 @@ function EditorPageContent() {
 				isPlaying={isPlaying}
 				loop={loop}
 				timecode={formatTimecode(currentTime)}
+				saveStatus={saveStatus}
+				canUndo={canUndo}
+				canRedo={canRedo}
+				versions={versions}
 				onExport={() => router.push(`/export?id=${projectId}`)}
 				onPlayToggle={() => setIsPlaying((p) => !p)}
 				onStop={() => {
@@ -796,6 +952,10 @@ function EditorPageContent() {
 				}}
 				onLoopToggle={() => setLoop((p) => !p)}
 				onFrameStep={handleFrameStep}
+				onUndo={handleUndo}
+				onRedo={handleRedo}
+				onSaveVersion={handleSaveVersion}
+				onRestoreVersion={handleRestoreVersion}
 				fps={30}
 			/>
 			<div className="flex flex-1 flex-col gap-2 overflow-hidden p-2">
