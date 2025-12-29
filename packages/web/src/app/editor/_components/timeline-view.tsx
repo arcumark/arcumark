@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Timeline, Track } from "@arcumark/shared";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import type { EditMode } from "@/lib/shared/editor";
 
 type Props = {
 	timeline: Timeline;
@@ -18,7 +19,7 @@ type Props = {
 	autoScrollEnabled: boolean;
 	onToggleSnap: (enabled: boolean) => void;
 	onDeleteClip: (clipId: string) => void;
-	editMode?: "select" | "transform" | "crop" | "distort" | "cut";
+	editMode?: EditMode;
 	onSplitClip?: () => void;
 };
 

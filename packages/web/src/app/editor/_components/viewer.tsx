@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VideoPreset } from "@arcumark/shared";
 import type { Clip } from "@arcumark/shared";
 import type { MediaItem } from "./media-browser";
+import type { EditMode } from "@/lib/shared/editor";
 import {
 	Select,
 	SelectContent,
@@ -33,7 +34,7 @@ type Props = {
 	activeTextClip: Clip | null;
 	selectedClipId: string | null;
 	selectedClipKind: "video" | "audio" | "text" | null;
-	editMode: "select" | "transform" | "crop" | "distort";
+	editMode: EditMode;
 	onAdjustClip?: (clipId: string, props: Record<string, unknown>) => void;
 	onScrub: (time: number) => void;
 	onZoomChange: (value: number) => void;

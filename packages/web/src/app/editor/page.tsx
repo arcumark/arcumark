@@ -11,6 +11,7 @@ import {
 import { VIDEO_PRESETS } from "@arcumark/shared";
 import { Clip, Timeline, Track, validateTimeline } from "@arcumark/shared";
 import { isValidProjectId, projectExistsInLocalStorage } from "@/lib/utils";
+import type { EditMode } from "@/lib/shared/editor";
 import { TopBar } from "./_components/top-bar";
 import {
 	MediaBrowser,
@@ -120,9 +121,7 @@ function EditorPageContent() {
 	const [topHeight, setTopHeight] = useState(MIN_TOP + 140);
 	const [isLoading, setIsLoading] = useState(true);
 	const [snapEnabled, setSnapEnabled] = useState(true);
-	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort" | "cut">(
-		"select"
-	);
+	const [editMode, setEditMode] = useState<EditMode>("select");
 	const [isPortrait, setIsPortrait] = useState(false);
 	const [isValidProject, setIsValidProject] = useState(false);
 	const [autoScrollTimeline, setAutoScrollTimeline] = useState(false);
@@ -984,10 +983,7 @@ function EditorPageContent() {
 							</Button>
 							<label className="flex items-center gap-1 text-xs select-none">
 								<span>Mode:</span>
-								<Select
-									value={editMode}
-									onValueChange={(value) => setEditMode(value as typeof editMode)}
-								>
+								<Select value={editMode} onValueChange={(value) => setEditMode(value as EditMode)}>
 									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
