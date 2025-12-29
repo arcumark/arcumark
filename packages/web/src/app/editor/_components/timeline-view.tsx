@@ -15,6 +15,7 @@ type Props = {
 	onMoveClip: (clipId: string, trackId: string, start: number) => void;
 	onDropMedia: (payload: { dataTransfer: DataTransfer; seconds: number; trackId?: string }) => void;
 	snapEnabled: boolean;
+	autoScrollEnabled: boolean;
 	onToggleSnap: (enabled: boolean) => void;
 	onDeleteClip: (clipId: string) => void;
 };
@@ -35,6 +36,7 @@ export function TimelineView({
 	onMoveClip,
 	onDropMedia,
 	snapEnabled,
+	autoScrollEnabled,
 	onToggleSnap,
 	onDeleteClip,
 }: Props) {
@@ -117,6 +119,15 @@ export function TimelineView({
 	}, [safeDuration, rulerStep]);
 
 	const playheadLeft = (currentTime / safeDuration) * width;
+
+	// Auto-scroll to center playhead when enabled
+	useEffect(() => {
+		if (!autoScrollEnabled || !canvasRef.current) return;
+		const container = canvasRef.current;
+		const containerWidth = container.clientWidth;
+		const targetScrollLeft = playheadLeft - containerWidth / 2;
+		container.scrollLeft = Math.max(0, targetScrollLeft);
+	}, [autoScrollEnabled, playheadLeft, currentTime]);
 
 	const handleCanvasClick = useCallback(
 		(event: React.MouseEvent<HTMLDivElement>) => {

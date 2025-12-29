@@ -17,6 +17,7 @@ import { Inspector } from "./_components/Inspector";
 import { TimelineView } from "./_components/timeline-view";
 import { VideoIcon, ImageIcon, MusicIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
 	SelectContent,
@@ -116,6 +117,7 @@ function EditorPageContent() {
 	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort">("select");
 	const [isPortrait, setIsPortrait] = useState(false);
 	const [isValidProject, setIsValidProject] = useState(false);
+	const [autoScrollTimeline, setAutoScrollTimeline] = useState(false);
 	const clipboardRef = useRef<{ clip: Clip; kind: Track["kind"] } | null>(null);
 	const dragState = useRef<{
 		type: "left" | "right" | "vertical";
@@ -760,7 +762,7 @@ function EditorPageContent() {
 					style={{ height: `calc(100vh - ${topHeight}px - 84px)` }}
 				>
 					<div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-4">
 							<Button
 								variant="outline"
 								onClick={() => {
@@ -818,7 +820,7 @@ function EditorPageContent() {
 								Add text clip
 							</Button>
 							<label className="flex items-center gap-1 text-xs select-none">
-								<span>Mode</span>
+								<span>Mode:</span>
 								<Select
 									value={editMode}
 									onValueChange={(value) => setEditMode(value as typeof editMode)}
@@ -827,14 +829,22 @@ function EditorPageContent() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="select">Select</SelectItem>
-										<SelectItem value="transform">Transform</SelectItem>
-										<SelectItem value="crop">Crop</SelectItem>
-										<SelectItem value="distort">Distort</SelectItem>
+										<SelectItem value="select">select</SelectItem>
+										<SelectItem value="transform">transform</SelectItem>
+										<SelectItem value="crop">crop</SelectItem>
+										<SelectItem value="distort">distort</SelectItem>
 									</SelectContent>
 								</Select>
 							</label>
 						</div>
+						<label className="flex items-center gap-2 text-xs select-none">
+							<Checkbox
+								checked={autoScrollTimeline}
+								onCheckedChange={(checked) => setAutoScrollTimeline(checked as boolean)}
+								aria-label="Auto-scroll timeline to center playhead"
+							/>
+							<span>Auto-scroll</span>
+						</label>
 					</div>
 					<div className="min-h-0 flex-1">
 						<TimelineView
@@ -843,6 +853,7 @@ function EditorPageContent() {
 							currentTime={currentTime}
 							zoom={zoom}
 							snapEnabled={snapEnabled}
+							autoScrollEnabled={autoScrollTimeline}
 							onToggleSnap={setSnapEnabled}
 							onTimeChange={(time) => setCurrentTime(time)}
 							onSelectClip={(id) => setSelectedClipId(id)}
