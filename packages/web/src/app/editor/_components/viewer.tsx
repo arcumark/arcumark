@@ -17,6 +17,7 @@ import { AudioProcessor } from "@/lib/audio/audio-processor";
 import { getAudioContext } from "@/lib/audio/audio-context";
 import { calculateNormalizeGain } from "@/lib/audio/normalize";
 import { calculateSourceTime } from "@/lib/timing/speed-utils";
+import { getAnimatedProperties, type ClipKeyframes } from "@/lib/animation/keyframes";
 
 type PresetOption = VideoPreset;
 
@@ -165,22 +166,17 @@ export function Viewer({
 		}
 	}, []);
 
-	// Calculate fade transition opacity
+	// Calculate fade transition opacity with keyframe animation
 	const computedOpacity = useMemo(() => {
 		if (!activeClip) return 1;
 
 		const clipProgress = currentTime - activeClip.start;
 		const clipRemaining = activeClip.end - currentTime;
+		const clipDuration = activeClip.end - activeClip.start;
 		let opacityMultiplier = 1.0;
 
-		const fadeIn = Math.min(
-			(activeClip.props?.fadeIn as number) || 0,
-			activeClip.end - activeClip.start
-		);
-		const fadeOut = Math.min(
-			(activeClip.props?.fadeOut as number) || 0,
-			activeClip.end - activeClip.start
-		);
+		const fadeIn = Math.min((activeClip.props?.fadeIn as number) || 0, clipDuration);
+		const fadeOut = Math.min((activeClip.props?.fadeOut as number) || 0, clipDuration);
 
 		if (fadeIn > 0 && clipProgress < fadeIn) {
 			opacityMultiplier = Math.max(0, Math.min(1, clipProgress / fadeIn));
@@ -188,7 +184,19 @@ export function Viewer({
 			opacityMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
 		}
 
-		const baseOpacity = ((activeClip.props?.opacity as number) || 100) / 100;
+		// Get base opacity (with keyframe animation if present)
+		let baseOpacity = ((activeClip.props?.opacity as number) || 100) / 100;
+
+		const keyframes = activeClip.props?.keyframes as ClipKeyframes | undefined;
+		if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+			const animatedProps = getAnimatedProperties(keyframes, clipProgress, {
+				opacity: baseOpacity * 100,
+			});
+			if (animatedProps.opacity !== undefined) {
+				baseOpacity = animatedProps.opacity / 100;
+			}
+		}
+
 		return baseOpacity * opacityMultiplier;
 	}, [activeClip, currentTime]);
 
@@ -630,14 +638,40 @@ export function Viewer({
 												})(),
 												transform: (() => {
 													if (!activeClip) return undefined;
-													const tx =
+
+													// Calculate clip-relative time for keyframes
+													const clipProgress = currentTime - activeClip.start;
+													const clipDuration = activeClip.end - activeClip.start;
+
+													// Get default values
+													const defaultTx =
 														typeof activeClip.props?.tx === "number" ? activeClip.props.tx : 0;
-													const ty =
+													const defaultTy =
 														typeof activeClip.props?.ty === "number" ? activeClip.props.ty : 0;
-													const scale =
+													const defaultScale =
 														typeof activeClip.props?.scale === "number"
 															? activeClip.props.scale
 															: 1;
+
+													// Apply keyframe animations if present
+													let tx = defaultTx;
+													let ty = defaultTy;
+													let scale = defaultScale;
+
+													const keyframes = activeClip.props?.keyframes as
+														| ClipKeyframes
+														| undefined;
+													if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+														const animatedProps = getAnimatedProperties(keyframes, clipProgress, {
+															tx: defaultTx,
+															ty: defaultTy,
+															scale: defaultScale,
+														});
+														tx = animatedProps.tx ?? defaultTx;
+														ty = animatedProps.ty ?? defaultTy;
+														scale = animatedProps.scale ?? defaultScale;
+													}
+
 													const transforms = [];
 													if (tx !== 0 || ty !== 0) {
 														transforms.push(`translate(${tx}px, ${ty}px)`);
@@ -794,49 +828,115 @@ export function Viewer({
 											))}
 										</div>
 									)}
-								{activeTextClip && (
-									<div
-										className="pointer-events-none absolute"
-										style={{
-											left: `${typeof activeTextClip.props?.x === "number" ? activeTextClip.props.x : 50}%`,
-											top: `${typeof activeTextClip.props?.y === "number" ? activeTextClip.props.y : 50}%`,
-											transform: `translate(-50%, -50%) rotate(${typeof activeTextClip.props?.rotation === "number" ? activeTextClip.props.rotation : 0}deg)`,
-											transformOrigin: `${typeof activeTextClip.props?.anchorX === "string" ? activeTextClip.props.anchorX : "center"} ${typeof activeTextClip.props?.anchorY === "string" ? activeTextClip.props.anchorY : "center"}`,
-											textAlign:
-												typeof activeTextClip.props?.align === "string"
-													? (activeTextClip.props.align as
-															| "left"
-															| "center"
-															| "right"
-															| "justify"
-															| "start"
-															| "end"
-															| undefined)
-													: "center",
-											lineHeight:
-												typeof activeTextClip.props?.lineHeight === "number"
-													? activeTextClip.props.lineHeight
-													: 1.2,
-											letterSpacing:
-												typeof activeTextClip.props?.letterSpacing === "number"
-													? `${activeTextClip.props.letterSpacing}px`
-													: "0px",
-											whiteSpace: "pre-wrap",
-										}}
-									>
-										<div className="relative inline-block">
-											{typeof activeTextClip.props?.strokeWidth === "number" &&
-												typeof activeTextClip.props?.strokeColor === "string" &&
-												activeTextClip.props.strokeWidth > 0 && (
+								{activeTextClip &&
+									(() => {
+										// Calculate clip-relative time for keyframes
+										const clipProgress = currentTime - activeTextClip.start;
+										const clipDuration = activeTextClip.end - activeTextClip.start;
+
+										// Get default values
+										const defaultX =
+											typeof activeTextClip.props?.x === "number" ? activeTextClip.props.x : 50;
+										const defaultY =
+											typeof activeTextClip.props?.y === "number" ? activeTextClip.props.y : 50;
+										const defaultRotation =
+											typeof activeTextClip.props?.rotation === "number"
+												? activeTextClip.props.rotation
+												: 0;
+
+										// Apply keyframe animations if present
+										let x = defaultX;
+										let y = defaultY;
+										let rotation = defaultRotation;
+										const defaultOpacity =
+											typeof activeTextClip.props?.opacity === "number"
+												? activeTextClip.props.opacity
+												: 100;
+										let opacity = defaultOpacity;
+
+										const keyframes = activeTextClip.props?.keyframes as ClipKeyframes | undefined;
+										if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+											const animatedProps = getAnimatedProperties(keyframes, clipProgress, {
+												x: defaultX,
+												y: defaultY,
+												rotation: defaultRotation,
+												opacity: defaultOpacity,
+											});
+											x = animatedProps.x ?? defaultX;
+											y = animatedProps.y ?? defaultY;
+											rotation = animatedProps.rotation ?? defaultRotation;
+											opacity = animatedProps.opacity ?? defaultOpacity;
+										}
+
+										return (
+											<div
+												className="pointer-events-none absolute"
+												style={{
+													left: `${x}%`,
+													top: `${y}%`,
+													transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+													opacity: opacity / 100,
+													transformOrigin: `${typeof activeTextClip.props?.anchorX === "string" ? activeTextClip.props.anchorX : "center"} ${typeof activeTextClip.props?.anchorY === "string" ? activeTextClip.props.anchorY : "center"}`,
+													textAlign:
+														typeof activeTextClip.props?.align === "string"
+															? (activeTextClip.props.align as
+																	| "left"
+																	| "center"
+																	| "right"
+																	| "justify"
+																	| "start"
+																	| "end"
+																	| undefined)
+															: "center",
+													lineHeight:
+														typeof activeTextClip.props?.lineHeight === "number"
+															? activeTextClip.props.lineHeight
+															: 1.2,
+													letterSpacing:
+														typeof activeTextClip.props?.letterSpacing === "number"
+															? `${activeTextClip.props.letterSpacing}px`
+															: "0px",
+													whiteSpace: "pre-wrap",
+												}}
+											>
+												<div className="relative inline-block">
+													{typeof activeTextClip.props?.strokeWidth === "number" &&
+														typeof activeTextClip.props?.strokeColor === "string" &&
+														activeTextClip.props.strokeWidth > 0 && (
+															<span
+																aria-hidden
+																className="pointer-events-none absolute inset-0 select-none"
+																style={{
+																	color:
+																		typeof activeTextClip.props?.strokeColor === "string"
+																			? (activeTextClip.props.strokeColor as string)
+																			: "#000000",
+																	WebkitTextStroke: `${activeTextClip.props.strokeWidth}px ${activeTextClip.props.strokeColor}`,
+																	fontFamily:
+																		typeof activeTextClip.props?.font === "string" &&
+																		activeTextClip.props.font.length > 0
+																			? (activeTextClip.props.font as string)
+																			: "Inter, system-ui, sans-serif",
+																	fontSize:
+																		typeof activeTextClip.props?.size === "number"
+																			? `${activeTextClip.props.size}px`
+																			: "24px",
+																}}
+															>
+																{typeof activeTextClip.props?.text === "string" &&
+																activeTextClip.props.text.length > 0
+																	? (activeTextClip.props.text as string)
+																	: "Text"}
+															</span>
+														)}
 													<span
-														aria-hidden
-														className="pointer-events-none absolute inset-0 select-none"
+														className="relative z-10"
 														style={{
 															color:
-																typeof activeTextClip.props?.strokeColor === "string"
-																	? (activeTextClip.props.strokeColor as string)
-																	: "#000000",
-															WebkitTextStroke: `${activeTextClip.props.strokeWidth}px ${activeTextClip.props.strokeColor}`,
+																typeof activeTextClip.props?.color === "string" &&
+																activeTextClip.props.color.length > 0
+																	? (activeTextClip.props.color as string)
+																	: "#ffffff",
 															fontFamily:
 																typeof activeTextClip.props?.font === "string" &&
 																activeTextClip.props.font.length > 0
@@ -853,34 +953,10 @@ export function Viewer({
 															? (activeTextClip.props.text as string)
 															: "Text"}
 													</span>
-												)}
-											<span
-												className="relative z-10"
-												style={{
-													color:
-														typeof activeTextClip.props?.color === "string" &&
-														activeTextClip.props.color.length > 0
-															? (activeTextClip.props.color as string)
-															: "#ffffff",
-													fontFamily:
-														typeof activeTextClip.props?.font === "string" &&
-														activeTextClip.props.font.length > 0
-															? (activeTextClip.props.font as string)
-															: "Inter, system-ui, sans-serif",
-													fontSize:
-														typeof activeTextClip.props?.size === "number"
-															? `${activeTextClip.props.size}px`
-															: "24px",
-												}}
-											>
-												{typeof activeTextClip.props?.text === "string" &&
-												activeTextClip.props.text.length > 0
-													? (activeTextClip.props.text as string)
-													: "Text"}
-											</span>
-										</div>
-									</div>
-								)}
+												</div>
+											</div>
+										);
+									})()}
 							</div>
 						</div>
 					</div>

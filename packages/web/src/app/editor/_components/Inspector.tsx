@@ -18,12 +18,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ColorWheel } from "./color-wheel";
 import { CurvesEditor } from "./curves-editor";
 import { LevelsEditor } from "./levels-editor";
+import { KeyframesManager } from "./keyframes-manager";
 import type {
 	ColorWheelAdjustment,
 	ColorCurves,
 	LevelsAdjustment,
 	WhiteBalance,
 } from "@/lib/color/color-correction";
+import type { ClipKeyframes } from "@/lib/animation/keyframes";
 
 type Props = {
 	clip: Clip | null;
@@ -599,6 +601,32 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						>
 							Reset All Color Correction
 						</Button>
+					</>
+				)}
+
+				{/* Keyframe Animation Section */}
+				{(clipKind === "video" || clipKind === "text") && (
+					<>
+						<Label className="text-xs font-semibold">Keyframe Animation</Label>
+						<KeyframesManager
+							value={
+								(clip.props?.keyframes as ClipKeyframes) || {
+									properties: [],
+								}
+							}
+							clipDuration={clip.end - clip.start}
+							clipProps={clip.props || {}}
+							onChange={(keyframes) =>
+								onChange({
+									props: { ...clip.props, keyframes },
+								})
+							}
+							supportedProperties={
+								clipKind === "video"
+									? ["tx", "ty", "scale", "opacity"]
+									: ["x", "y", "rotation", "opacity"]
+							}
+						/>
 					</>
 				)}
 

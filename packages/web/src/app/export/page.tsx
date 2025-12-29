@@ -27,6 +27,7 @@ import {
 	applyCurves,
 	type ColorCorrectionProps,
 } from "@/lib/color/color-correction";
+import { getAnimatedProperties, type ClipKeyframes } from "@/lib/animation/keyframes";
 
 // This page is fully client-side and requires no server-side processing
 export const dynamic = "force-static";
@@ -441,14 +442,41 @@ function ExportPageContent() {
 				dw = canvas.height * mediaAspect;
 				dh = canvas.height;
 			}
-			const dx = (canvas.width - dw) / 2 + (typeof props.tx === "number" ? props.tx : 0);
-			const dy = (canvas.height - dh) / 2 + (typeof props.ty === "number" ? props.ty : 0);
+			// Calculate clip-relative time for keyframes
+			const clipProgress = timeSec - clip.start;
+			const clipDuration = clip.end - clip.start;
+			const clipRemaining = clip.end - timeSec;
+
+			// Get default transform values
+			const defaultTx = typeof props.tx === "number" ? props.tx : 0;
+			const defaultTy = typeof props.ty === "number" ? props.ty : 0;
+			const defaultScale = typeof props.scale === "number" ? props.scale : 1;
+
+			// Apply keyframe animations if present
+			let tx = defaultTx;
+			let ty = defaultTy;
+			let scale = defaultScale;
+
+			const keyframes = props.keyframes as ClipKeyframes | undefined;
+			if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+				const animatedProps = getAnimatedProperties(keyframes, clipProgress, {
+					tx: defaultTx,
+					ty: defaultTy,
+					scale: defaultScale,
+				});
+				tx = animatedProps.tx ?? defaultTx;
+				ty = animatedProps.ty ?? defaultTy;
+				scale = animatedProps.scale ?? defaultScale;
+			}
+
+			// Apply scale to dimensions
+			dw *= scale;
+			dh *= scale;
+
+			const dx = (canvas.width - dw) / 2 + tx;
+			const dy = (canvas.height - dh) / 2 + ty;
 
 			ctx.save();
-
-			// Calculate wipe and fade timing
-			const clipProgress = timeSec - clip.start;
-			const clipRemaining = clip.end - timeSec;
 
 			// Apply wipe clipping
 			const wipeIn = (props.wipeIn as number) || 0;
@@ -488,7 +516,18 @@ function ExportPageContent() {
 				opacityMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
 			}
 
-			const baseOpacity = clampOpacity(props.opacity, 100) / 100;
+			// Get base opacity (with keyframe animation if present)
+			let baseOpacity = clampOpacity(props.opacity, 100) / 100;
+
+			if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+				const opacityProps = getAnimatedProperties(keyframes, clipProgress, {
+					opacity: baseOpacity * 100,
+				});
+				if (opacityProps.opacity !== undefined) {
+					baseOpacity = opacityProps.opacity / 100;
+				}
+			}
+
 			ctx.globalAlpha = baseOpacity * opacityMultiplier;
 
 			ctx.drawImage(element, sx, sy, sw, sh, dx, dy, dw, dh);
@@ -562,16 +601,43 @@ function ExportPageContent() {
 				typeof props.align === "string" && ["left", "center", "right"].includes(props.align)
 					? (props.align as CanvasTextAlign)
 					: "center";
-			const rotation = typeof props.rotation === "number" ? props.rotation : 0;
-			const xPct = typeof props.x === "number" ? props.x : 50;
-			const yPct = typeof props.y === "number" ? props.y : 50;
+
+			// Calculate clip-relative time for keyframes
+			const clipProgress = timeSec - clip.start;
+			const clipDuration = clip.end - clip.start;
+			const clipRemaining = clip.end - timeSec;
+
+			// Get default values
+			const defaultRotation = typeof props.rotation === "number" ? props.rotation : 0;
+			const defaultX = typeof props.x === "number" ? props.x : 50;
+			const defaultY = typeof props.y === "number" ? props.y : 50;
+			const defaultOpacity = clampOpacity(props.opacity, 100);
+
+			// Apply keyframe animations if present
+			let rotation = defaultRotation;
+			let xPct = defaultX;
+			let yPct = defaultY;
+			let opacity = defaultOpacity;
+
+			const textKeyframes = props.keyframes as ClipKeyframes | undefined;
+			if (textKeyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+				const animatedProps = getAnimatedProperties(textKeyframes, clipProgress, {
+					rotation: defaultRotation,
+					x: defaultX,
+					y: defaultY,
+					opacity: defaultOpacity,
+				});
+				rotation = animatedProps.rotation ?? defaultRotation;
+				xPct = animatedProps.x ?? defaultX;
+				yPct = animatedProps.y ?? defaultY;
+				opacity = animatedProps.opacity ?? defaultOpacity;
+			}
+
 			const posX = (xPct / 100) * canvas.width;
 			const posY = (yPct / 100) * canvas.height;
 			const lines = text.split("\n");
 
 			// Calculate fade transition opacity
-			const clipProgress = timeSec - clip.start;
-			const clipRemaining = clip.end - timeSec;
 			let opacityMultiplier = 1.0;
 
 			const fadeIn = Math.min((props.fadeIn as number) || 0, clip.end - clip.start);
@@ -583,7 +649,8 @@ function ExportPageContent() {
 				opacityMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
 			}
 
-			const baseOpacity = clampOpacity(props.opacity, 100) / 100;
+			// Use opacity from keyframe animation (already calculated above)
+			const baseOpacity = opacity / 100;
 
 			ctx.save();
 			ctx.translate(posX, posY);
