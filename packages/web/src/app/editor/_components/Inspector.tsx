@@ -26,6 +26,14 @@ import type {
 	WhiteBalance,
 } from "@/lib/color/color-correction";
 import type { ClipKeyframes } from "@/lib/animation/keyframes";
+import { Trash2, Plus } from "lucide-react";
+
+type ClipMarker = {
+	id: string;
+	time: number;
+	label?: string;
+	color?: string;
+};
 
 type Props = {
 	clip: Clip | null;
@@ -629,6 +637,92 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						/>
 					</>
 				)}
+
+				{/* Clip Markers Section */}
+				<>
+					<Label className="text-xs font-semibold">Clip Markers</Label>
+					<div className="grid gap-2">
+						{((clip as Clip & { markers?: ClipMarker[] }).markers || []).map((marker, index) => {
+							const clipDuration = clip.end - clip.start;
+							return (
+								<div
+									key={marker.id}
+									className="border-border flex items-center gap-2 border p-2 text-xs"
+								>
+									<div className="grid flex-1 gap-1">
+										<Label className="text-xs">Time (s)</Label>
+										<Input
+											type="number"
+											min={0}
+											max={clipDuration}
+											step={0.1}
+											value={marker.time.toFixed(2)}
+											onChange={(e) => {
+												const newTime = Math.max(
+													0,
+													Math.min(clipDuration, parseFloat(e.target.value) || 0)
+												);
+												const currentMarkers =
+													(clip as Clip & { markers?: ClipMarker[] }).markers || [];
+												const updatedMarkers = [...currentMarkers];
+												updatedMarkers[index] = { ...marker, time: newTime };
+												onChange({ markers: updatedMarkers } as Partial<Clip>);
+											}}
+											className="h-8 text-xs"
+										/>
+									</div>
+									<div className="grid flex-1 gap-1">
+										<Label className="text-xs">Label</Label>
+										<Input
+											type="text"
+											value={marker.label || ""}
+											onChange={(e) => {
+												const currentMarkers =
+													(clip as Clip & { markers?: ClipMarker[] }).markers || [];
+												const updatedMarkers = [...currentMarkers];
+												updatedMarkers[index] = { ...marker, label: e.target.value || undefined };
+												onChange({ markers: updatedMarkers } as Partial<Clip>);
+											}}
+											placeholder="Marker label"
+											className="h-8 text-xs"
+										/>
+									</div>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => {
+											const currentMarkers =
+												(clip as Clip & { markers?: ClipMarker[] }).markers || [];
+											const updatedMarkers = currentMarkers.filter((_, i) => i !== index);
+											onChange({ markers: updatedMarkers } as Partial<Clip>);
+										}}
+										className="h-8 w-8 p-0"
+									>
+										<Trash2 className="h-4 w-4" />
+									</Button>
+								</div>
+							);
+						})}
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => {
+								const currentTime = 0; // Default to start of clip
+								const newMarker: ClipMarker = {
+									id: `marker_${Date.now()}`,
+									time: currentTime,
+									label: "",
+								};
+								const existingMarkers = (clip as Clip & { markers?: ClipMarker[] }).markers || [];
+								onChange({ markers: [...existingMarkers, newMarker] } as Partial<Clip>);
+							}}
+							className="w-full"
+						>
+							<Plus className="mr-2 h-4 w-4" />
+							Add Marker
+						</Button>
+					</div>
+				</>
 
 				{/* Audio Equalizer Section */}
 				{clipKind === "audio" && (

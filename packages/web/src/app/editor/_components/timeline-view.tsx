@@ -1,24 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Timeline, Track } from "@arcumark/shared";
+import { Timeline, Track, type Clip } from "@arcumark/shared";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Lock, Unlock } from "lucide-react";
 import type { EditMode } from "@/lib/shared/editor";
 
 type Props = {
 	timeline: Timeline;
 	selectedClipId: string | null;
+	selectedClipIds?: string[]; // Multiple selection
 	currentTime: number;
 	zoom: number;
 	onTimeChange: (time: number) => void;
 	onSelectClip: (clipId: string) => void;
+	onSelectClips?: (clipIds: string[]) => void; // Multiple selection handler
 	onMoveClip: (clipId: string, trackId: string, start: number) => void;
+	onTrimClip?: (clipId: string, side: "left" | "right", newTime: number) => void;
+	onRippleTrim?: (clipId: string, side: "left" | "right", newTime: number) => void;
+	onRollTrim?: (clipId: string, side: "left" | "right", newTime: number) => void;
 	onDropMedia: (payload: { dataTransfer: DataTransfer; seconds: number; trackId?: string }) => void;
 	snapEnabled: boolean;
 	autoScrollEnabled: boolean;
 	onToggleSnap: (enabled: boolean) => void;
 	onDeleteClip: (clipId: string) => void;
+	onToggleTrackLock?: (trackId: string) => void;
 	editMode?: EditMode;
 	onSplitClip?: () => void;
 };
@@ -32,16 +39,22 @@ function trackBadgeClass(kind: Track["kind"]) {
 export function TimelineView({
 	timeline,
 	selectedClipId,
+	selectedClipIds = [],
 	currentTime,
 	zoom,
 	onTimeChange,
 	onSelectClip,
+	onSelectClips,
 	onMoveClip,
+	onTrimClip,
+	onRippleTrim,
+	onRollTrim,
 	onDropMedia,
 	snapEnabled,
 	autoScrollEnabled,
 	onToggleSnap,
 	onDeleteClip,
+	onToggleTrackLock,
 	editMode,
 	onSplitClip,
 }: Props) {
@@ -71,8 +84,15 @@ export function TimelineView({
 		startOffsetSec: 0,
 		duration: 0,
 	});
+	const trimStateRef = useRef<{
+		clipId: string;
+		side: "left" | "right";
+		originalStart: number;
+		originalEnd: number;
+	} | null>(null);
 	const isDraggingRef = useRef(false);
 	const isScrubbingRef = useRef(false);
+	const isTrimmingRef = useRef(false);
 
 	const safeDuration = Math.max(0.001, timeline.duration);
 
@@ -142,8 +162,9 @@ export function TimelineView({
 			const next = Math.max(0, Math.min(1, ratio)) * safeDuration;
 			onTimeChange(next);
 			onSelectClip("");
+			if (onSelectClips) onSelectClips([]);
 		},
-		[onTimeChange, onSelectClip, safeDuration, width]
+		[onTimeChange, onSelectClip, onSelectClips, safeDuration, width]
 	);
 
 	const getSecFromClientX = useCallback(
@@ -158,6 +179,21 @@ export function TimelineView({
 
 	useEffect(() => {
 		const handleMove = (event: MouseEvent) => {
+			if (isTrimmingRef.current && trimStateRef.current) {
+				const { clipId, side } = trimStateRef.current;
+				const sec = getSecFromClientX(event.clientX);
+				const snappedSec = snapTime(sec);
+
+				// Use appropriate trim handler based on edit mode
+				if (editMode === "ripple" && onRippleTrim) {
+					onRippleTrim(clipId, side, snappedSec);
+				} else if (editMode === "roll" && onRollTrim) {
+					onRollTrim(clipId, side, snappedSec);
+				} else if (onTrimClip) {
+					onTrimClip(clipId, side, snappedSec);
+				}
+				return;
+			}
 			if (!isDraggingRef.current) return;
 			const { clipId, trackId, startOffsetSec } = dragStateRef.current;
 			if (!canvasRef.current) return;
@@ -194,10 +230,11 @@ export function TimelineView({
 		const handleUp = () => {
 			isDraggingRef.current = false;
 			isScrubbingRef.current = false;
+			isTrimmingRef.current = false;
+			trimStateRef.current = null;
 			setPreview(null);
 		};
 		const handleKey = (event: KeyboardEvent) => {
-			if (!selectedClipId) return;
 			const target = event.target as HTMLElement | null;
 			if (target) {
 				const tag = target.tagName.toLowerCase();
@@ -206,7 +243,18 @@ export function TimelineView({
 				}
 			}
 			if (event.key === "Delete" || event.key === "Backspace") {
-				onDeleteClip(selectedClipId);
+				if (selectedClipIds && selectedClipIds.length > 0) {
+					// Delete multiple clips
+					selectedClipIds.forEach((id) => onDeleteClip(id));
+					if (onSelectClips) onSelectClips([]);
+				} else if (selectedClipId) {
+					onDeleteClip(selectedClipId);
+				}
+			}
+			// Multi-select with Shift+Click (handled in clip onClick)
+			if (event.key === "Escape") {
+				onSelectClip("");
+				if (onSelectClips) onSelectClips([]);
 			}
 		};
 		const handleScrubMove = (event: MouseEvent) => {
@@ -229,17 +277,24 @@ export function TimelineView({
 		onDeleteClip,
 		onMoveClip,
 		onTimeChange,
+		onTrimClip,
+		onRippleTrim,
+		onRollTrim,
+		onSelectClip,
 		selectedClipId,
+		selectedClipIds,
+		onSelectClips,
 		snapEnabled,
 		snapTime,
 		safeDuration,
 		timeline.tracks,
 		width,
+		editMode,
 	]);
 
 	return (
 		<div className="border-border bg-card flex h-full flex-col border">
-			<div className="grid flex-1 grid-cols-[160px_1fr] overflow-hidden">
+			<div className="grid flex-1 grid-cols-[240px_1fr] overflow-hidden">
 				<div className="border-border bg-card sticky left-0 flex h-full min-h-0 flex-col border-r">
 					<div className="border-border flex h-[36px] items-center justify-between border-b pr-2 pl-3 text-xs">
 						<span>Ruler</span>
@@ -271,7 +326,28 @@ export function TimelineView({
 										<div className={trackBadgeClass(track.kind)} />
 										<div className="text-xs tracking-tight">{track.id.toUpperCase()}</div>
 									</div>
-									<div className="flex gap-1">
+									<div className="flex items-center gap-1">
+										{onToggleTrackLock && (
+											<Button
+												variant={
+													(track as Track & { locked?: boolean }).locked ? "default" : "ghost"
+												}
+												size="xs"
+												onClick={() => onToggleTrackLock(track.id)}
+												className="h-6 w-6 p-0"
+												title={
+													(track as Track & { locked?: boolean }).locked
+														? "Unlock track"
+														: "Lock track"
+												}
+											>
+												{(track as Track & { locked?: boolean }).locked ? (
+													<Lock className="h-3.5 w-3.5" />
+												) : (
+													<Unlock className="h-3.5 w-3.5" />
+												)}
+											</Button>
+										)}
 										<Button
 											variant={muteState[track.id] ? "default" : "outline"}
 											size="xs"
@@ -408,24 +484,38 @@ export function TimelineView({
 										const clipStart = (clip.start / safeDuration) * width;
 										const clipEnd = (clip.end / safeDuration) * width;
 										const clipWidth = Math.max(clipEnd - clipStart, 6);
+										const isSelected = selectedClipId === clip.id;
+										const isMultiSelected = selectedClipIds?.includes(clip.id) ?? false;
 										const baseBg =
 											track.kind === "audio"
 												? "bg-emerald-900/60"
 												: track.kind === "text"
 													? "bg-purple-900/60"
 													: "bg-blue-900/60";
+										const isLocked = (track as Track & { locked?: boolean }).locked ?? false;
 										return (
 											<div
 												key={clip.id}
 												className={`absolute top-1.5 flex h-9 items-center justify-between border px-2 text-xs ${baseBg} ${
-													selectedClipId === clip.id
+													isSelected || isMultiSelected
 														? "border-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.8)]"
 														: "border-border"
-												} ${editMode === "cut" ? "cursor-crosshair" : "cursor-pointer"}`}
+												} ${isLocked ? "opacity-50" : ""} ${editMode === "cut" ? "cursor-crosshair" : "cursor-pointer"}`}
 												style={{ left: clipStart, width: clipWidth }}
 												onClick={(e) => {
 													e.stopPropagation();
-													onSelectClip(clip.id);
+													if (e.shiftKey && onSelectClips) {
+														// Multi-select with Shift+Click
+														const currentIds = selectedClipIds || [];
+														if (currentIds.includes(clip.id)) {
+															onSelectClips(currentIds.filter((id) => id !== clip.id));
+														} else {
+															onSelectClips([...currentIds, clip.id]);
+														}
+													} else {
+														onSelectClip(clip.id);
+														if (onSelectClips) onSelectClips([clip.id]);
+													}
 												}}
 												onContextMenu={(e) => {
 													e.stopPropagation();
@@ -443,17 +533,118 @@ export function TimelineView({
 												}}
 												onMouseDown={(e) => {
 													e.stopPropagation();
-													// Disable dragging in cut mode
-													if (editMode === "cut") return;
-													isDraggingRef.current = true;
-													dragStateRef.current = {
-														clipId: clip.id,
-														trackId: track.id,
-														startOffsetSec: getSecFromClientX(e.clientX) - clip.start,
-														duration: clip.end - clip.start,
-													};
+													// Disable dragging in cut mode or if track is locked
+													if (editMode === "cut" || isLocked) return;
+
+													// Check if clicking on trim handle
+													const rect = e.currentTarget.getBoundingClientRect();
+													const clickX = e.clientX - rect.left;
+													const handleWidth = 6;
+
+													if (clickX < handleWidth && onTrimClip) {
+														// Left trim handle
+														isTrimmingRef.current = true;
+														trimStateRef.current = {
+															clipId: clip.id,
+															side: "left",
+															originalStart: clip.start,
+															originalEnd: clip.end,
+														};
+													} else if (clickX > clipWidth - handleWidth && onTrimClip) {
+														// Right trim handle
+														isTrimmingRef.current = true;
+														trimStateRef.current = {
+															clipId: clip.id,
+															side: "right",
+															originalStart: clip.start,
+															originalEnd: clip.end,
+														};
+													} else {
+														// Normal drag
+														isDraggingRef.current = true;
+														dragStateRef.current = {
+															clipId: clip.id,
+															trackId: track.id,
+															startOffsetSec: getSecFromClientX(e.clientX) - clip.start,
+															duration: clip.end - clip.start,
+														};
+													}
 												}}
 											>
+												{/* Trim Handles */}
+												{(isSelected || isMultiSelected) && !isLocked && onTrimClip && (
+													<>
+														<div
+															className="bg-primary hover:bg-primary/80 absolute top-0 bottom-0 left-0 w-1 cursor-ew-resize"
+															onMouseDown={(e) => {
+																e.stopPropagation();
+																isTrimmingRef.current = true;
+																trimStateRef.current = {
+																	clipId: clip.id,
+																	side: "left",
+																	originalStart: clip.start,
+																	originalEnd: clip.end,
+																};
+															}}
+														/>
+														<div
+															className="bg-primary hover:bg-primary/80 absolute top-0 right-0 bottom-0 w-1 cursor-ew-resize"
+															onMouseDown={(e) => {
+																e.stopPropagation();
+																isTrimmingRef.current = true;
+																trimStateRef.current = {
+																	clipId: clip.id,
+																	side: "right",
+																	originalStart: clip.start,
+																	originalEnd: clip.end,
+																};
+															}}
+														/>
+													</>
+												)}
+
+												{/* Thumbnail Preview */}
+												{(clip as Clip & { thumbnailUrl?: string }).thumbnailUrl &&
+													track.kind === "video" && (
+														<div
+															className="absolute top-0 bottom-0 left-0 w-12 overflow-hidden"
+															style={{
+																backgroundImage: `url(${(clip as Clip & { thumbnailUrl?: string }).thumbnailUrl})`,
+																backgroundSize: "cover",
+																backgroundPosition: "center",
+															}}
+														/>
+													)}
+
+												{/* Clip Markers */}
+												{(
+													clip as Clip & {
+														markers?: Array<{ id: string; time: number; label?: string }>;
+													}
+												).markers &&
+													(
+														clip as Clip & {
+															markers?: Array<{ id: string; time: number; label?: string }>;
+														}
+													).markers!.length > 0 && (
+														<div className="absolute top-0 right-0 left-0 flex h-1 gap-0.5">
+															{(
+																clip as Clip & {
+																	markers?: Array<{ id: string; time: number; label?: string }>;
+																}
+															).markers!.map((marker) => {
+																const markerX = (marker.time / (clip.end - clip.start)) * clipWidth;
+																return (
+																	<div
+																		key={marker.id}
+																		className="absolute top-0 h-full w-0.5 bg-yellow-400"
+																		style={{ left: `${markerX}px` }}
+																		title={marker.label || `Marker at ${marker.time.toFixed(2)}s`}
+																	/>
+																);
+															})}
+														</div>
+													)}
 												{/* Fade In Indicator */}
 												{typeof clip.props?.fadeIn === "number" && clip.props.fadeIn > 0 && (
 													<div

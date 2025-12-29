@@ -110,6 +110,7 @@ function EditorPageContent() {
 
 	const [timeline, setTimeline] = useState<Timeline>(() => createDefaultTimeline(projectId || ""));
 	const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+	const [selectedClipIds, setSelectedClipIds] = useState<string[]>([]);
 	const [currentTime, setCurrentTime] = useState(0);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [loop, setLoop] = useState(false);
@@ -570,7 +571,7 @@ function EditorPageContent() {
 					id: `${originalClip.id}_R_${timestamp}`,
 					start: splitTime,
 					props: {
-						...(originalClip.props || {}),
+						...originalClip.props,
 						sourceStart: originalSourceStart + splitOffset,
 					},
 				};
@@ -993,6 +994,8 @@ function EditorPageContent() {
 										<SelectItem value="crop">crop</SelectItem>
 										<SelectItem value="distort">distort</SelectItem>
 										<SelectItem value="cut">cut</SelectItem>
+										<SelectItem value="ripple">ripple</SelectItem>
+										<SelectItem value="roll">roll</SelectItem>
 									</SelectContent>
 								</Select>
 							</label>
@@ -1010,13 +1013,171 @@ function EditorPageContent() {
 						<TimelineView
 							timeline={timeline}
 							selectedClipId={selectedClipId}
+							selectedClipIds={selectedClipIds}
 							currentTime={currentTime}
 							zoom={zoom}
 							snapEnabled={snapEnabled}
 							autoScrollEnabled={autoScrollTimeline}
 							onToggleSnap={setSnapEnabled}
 							onTimeChange={(time) => setCurrentTime(time)}
-							onSelectClip={(id) => setSelectedClipId(id)}
+							onSelectClip={(id) => {
+								setSelectedClipId(id);
+								setSelectedClipIds(id ? [id] : []);
+							}}
+							onSelectClips={(ids) => {
+								setSelectedClipIds(ids);
+								setSelectedClipId(ids.length === 1 ? ids[0] : null);
+							}}
+							onTrimClip={(clipId, side, newTime) => {
+								setTimeline((prev) => {
+									const nextTracks = prev.tracks.map((track) => {
+										const clipIndex = track.clips.findIndex((c) => c.id === clipId);
+										if (clipIndex === -1) return track;
+										const clip = track.clips[clipIndex];
+										const updated: Clip = { ...clip };
+										if (side === "left") {
+											updated.start = Math.max(0, Math.min(newTime, clip.end - 0.05));
+										} else {
+											updated.end = Math.max(clip.start + 0.05, Math.min(newTime, prev.duration));
+										}
+										return {
+											...track,
+											clips: track.clips.map((c, idx) => (idx === clipIndex ? updated : c)),
+										};
+									});
+									return { ...prev, tracks: nextTracks };
+								});
+							}}
+							onRippleTrim={(clipId, side, newTime) => {
+								setTimeline((prev) => {
+									const nextTracks = prev.tracks.map((track) => {
+										const clipIndex = track.clips.findIndex((c) => c.id === clipId);
+										if (clipIndex === -1) return track;
+										const clip = track.clips[clipIndex];
+										const updated: Clip = { ...clip };
+										const delta: number =
+											side === "left" ? newTime - clip.start : newTime - clip.end;
+
+										if (side === "left") {
+											const newStart = Math.max(0, Math.min(newTime, clip.end - 0.05));
+											updated.start = newStart;
+										} else {
+											const newEnd = Math.max(clip.start + 0.05, Math.min(newTime, prev.duration));
+											updated.end = newEnd;
+										}
+
+										// Shift all subsequent clips in the same track
+										const updatedClips = track.clips.map((c, idx) => {
+											if (idx === clipIndex) return updated;
+											if (idx > clipIndex) {
+												// Shift subsequent clips
+												return {
+													...c,
+													start: Math.max(0, c.start + delta),
+													end: Math.max(c.start + delta + 0.05, c.end + delta),
+												};
+											}
+											return c;
+										});
+
+										return {
+											...track,
+											clips: updatedClips,
+										};
+									});
+									return { ...prev, tracks: nextTracks };
+								});
+							}}
+							onRollTrim={(clipId, side, newTime) => {
+								setTimeline((prev) => {
+									const nextTracks = prev.tracks.map((track) => {
+										const clipIndex = track.clips.findIndex((c) => c.id === clipId);
+										if (clipIndex === -1) return track;
+										const clip = track.clips[clipIndex];
+
+										// Find adjacent clip
+										let adjacentClip: Clip | null = null;
+										let adjacentIndex = -1;
+
+										if (side === "left") {
+											// Find previous clip
+											for (let i = clipIndex - 1; i >= 0; i--) {
+												if (track.clips[i].end <= clip.start) {
+													adjacentClip = track.clips[i];
+													adjacentIndex = i;
+													break;
+												}
+											}
+										} else {
+											// Find next clip
+											for (let i = clipIndex + 1; i < track.clips.length; i++) {
+												if (track.clips[i].start >= clip.end) {
+													adjacentClip = track.clips[i];
+													adjacentIndex = i;
+													break;
+												}
+											}
+										}
+
+										if (!adjacentClip) {
+											// No adjacent clip, fall back to normal trim
+											const updated: Clip = { ...clip };
+											if (side === "left") {
+												updated.start = Math.max(0, Math.min(newTime, clip.end - 0.05));
+											} else {
+												updated.end = Math.max(clip.start + 0.05, Math.min(newTime, prev.duration));
+											}
+											return {
+												...track,
+												clips: track.clips.map((c, idx) => (idx === clipIndex ? updated : c)),
+											};
+										}
+
+										// Roll edit: adjust both clips
+										const updated: Clip = { ...clip };
+										const updatedAdjacent: Clip = { ...adjacentClip };
+
+										if (side === "left") {
+											// Trim left edge: clip gets shorter, previous clip gets longer
+											const newStart = Math.max(0, Math.min(newTime, clip.end - 0.05));
+											const delta = newStart - clip.start;
+											updated.start = newStart;
+											updatedAdjacent.end = Math.max(
+												updatedAdjacent.start + 0.05,
+												updatedAdjacent.end + delta
+											);
+										} else {
+											// Trim right edge: clip gets shorter, next clip gets longer
+											const newEnd = Math.max(clip.start + 0.05, Math.min(newTime, prev.duration));
+											const delta = newEnd - clip.end;
+											updated.end = newEnd;
+											updatedAdjacent.start = Math.max(0, updatedAdjacent.start + delta);
+										}
+
+										return {
+											...track,
+											clips: track.clips.map((c, idx) => {
+												if (idx === clipIndex) return updated;
+												if (idx === adjacentIndex) return updatedAdjacent;
+												return c;
+											}),
+										};
+									});
+									return { ...prev, tracks: nextTracks };
+								});
+							}}
+							onToggleTrackLock={(trackId) => {
+								setTimeline((prev) => {
+									const nextTracks = prev.tracks.map((track) => {
+										if (track.id === trackId) {
+											const currentLocked = (track as Track & { locked?: boolean }).locked ?? false;
+											return { ...track, locked: !currentLocked };
+										}
+										return track;
+									});
+									return { ...prev, tracks: nextTracks };
+								});
+							}}
 							onMoveClip={(clipId, trackId, start) => {
 								setTimeline((prev) => {
 									let nextDuration = prev.duration;

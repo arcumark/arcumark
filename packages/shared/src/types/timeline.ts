@@ -40,18 +40,29 @@ export type ClipSpeedProps = {
 	speedKeyframes?: SpeedKeyframe[]; // For speed ramping
 };
 
+export type ClipMarker = {
+	id: string;
+	time: number; // Relative time from clip start (0 ~ clip.duration) in seconds
+	label?: string;
+	color?: string;
+};
+
 export type Clip = {
 	id: string;
 	start: number;
 	end: number;
 	sourceId: string;
 	props?: Record<string, unknown>;
+	groupId?: string; // For grouping/nesting clips
+	markers?: ClipMarker[]; // Clip markers
+	thumbnailUrl?: string; // Thumbnail preview URL
 };
 
 export type Track = {
 	id: string;
 	kind: "video" | "audio" | "text";
 	clips: Clip[];
+	locked?: boolean; // Track lock
 };
 
 export type Timeline = {

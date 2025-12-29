@@ -1,4 +1,4 @@
 /**
  * Editor mode types
  */
-export type EditMode = "select" | "transform" | "crop" | "distort" | "cut";
+export type EditMode = "select" | "transform" | "crop" | "distort" | "cut" | "ripple" | "roll";
