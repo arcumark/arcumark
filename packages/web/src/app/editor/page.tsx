@@ -12,7 +12,12 @@ import { VIDEO_PRESETS } from "@arcumark/shared";
 import { Clip, Timeline, Track, validateTimeline } from "@arcumark/shared";
 import { isValidProjectId, projectExistsInLocalStorage } from "@/lib/utils";
 import { TopBar } from "./_components/top-bar";
-import { MediaBrowser, MediaItem, MEDIA_DRAG_TYPE } from "./_components/media-browser";
+import {
+	MediaBrowser,
+	MediaItem,
+	MEDIA_DRAG_TYPE,
+	MEDIA_DRAG_IDS_TYPE,
+} from "./_components/media-browser";
 import { Viewer } from "./_components/viewer";
 import { Inspector } from "./_components/Inspector";
 import { TimelineView } from "./_components/timeline-view";
@@ -970,6 +975,29 @@ function EditorPageContent() {
 							}}
 							onDropMedia={({ dataTransfer, seconds }) => {
 								const startTime = Math.max(0, seconds);
+
+								// Check for multiple media items first
+								const mediaIdsJson = dataTransfer.getData(MEDIA_DRAG_IDS_TYPE);
+								if (mediaIdsJson) {
+									try {
+										const mediaIds = JSON.parse(mediaIdsJson) as string[];
+										if (Array.isArray(mediaIds) && mediaIds.length > 0) {
+											let cursor = startTime;
+											mediaIds.forEach((id) => {
+												const item = mediaItems.find((m) => m.id === id);
+												if (item) {
+													handleAddClipFromMedia(item, cursor);
+													cursor += item.durationSeconds + 0.25; // Add gap between clips
+												}
+											});
+											return;
+										}
+									} catch (e) {
+										console.error("Failed to parse media IDs", e);
+									}
+								}
+
+								// Check for single media item
 								const mediaId = dataTransfer.getData(MEDIA_DRAG_TYPE);
 								if (mediaId) {
 									const item = mediaItems.find((m) => m.id === mediaId);
@@ -978,6 +1006,8 @@ function EditorPageContent() {
 										return;
 									}
 								}
+
+								// Check for file drop
 								const files = dataTransfer.files;
 								if (files && files.length > 0) {
 									handleImportMedia(files, { autoAdd: true, startTime });

@@ -32,6 +32,7 @@ type Props = {
 };
 
 export const MEDIA_DRAG_TYPE = "application/x-arcumark-media-id";
+export const MEDIA_DRAG_IDS_TYPE = "application/x-arcumark-media-ids";
 
 export function MediaBrowser({ items, onImport, onDelete }: Props) {
 	const [viewMode, setViewMode] = useState<"list" | "gallery" | "icon">("list");
@@ -90,6 +91,17 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 			lastSelectedRef.current = null;
 		}
 		setShowDeleteConfirm(false);
+	};
+
+	const handleDragStart = (e: React.DragEvent, itemId: string) => {
+		// If dragging a selected item and there are multiple selections, drag all selected items
+		if (selectedIds.has(itemId) && selectedIds.size > 1) {
+			e.dataTransfer.setData(MEDIA_DRAG_IDS_TYPE, JSON.stringify(Array.from(selectedIds)));
+		} else {
+			// Single item drag
+			e.dataTransfer.setData(MEDIA_DRAG_TYPE, itemId);
+		}
+		e.dataTransfer.effectAllowed = "copy";
 	};
 
 	return (
@@ -170,10 +182,7 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 													}`}
 													draggable
 													onClick={(e) => handleItemClick(item.id, e.shiftKey, itemsForSection)}
-													onDragStart={(e) => {
-														e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
-														e.dataTransfer.effectAllowed = "copy";
-													}}
+													onDragStart={(e) => handleDragStart(e, item.id)}
 												>
 													<div className="border-border bg-card flex h-12 w-14 items-center justify-center border">
 														{item.icon}
@@ -202,10 +211,7 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 														}`}
 														draggable
 														onClick={(e) => handleItemClick(item.id, e.shiftKey, itemsForSection)}
-														onDragStart={(e) => {
-															e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
-															e.dataTransfer.effectAllowed = "copy";
-														}}
+														onDragStart={(e) => handleDragStart(e, item.id)}
 													>
 														<div className="border-border bg-card flex h-24 items-center justify-center border">
 															{item.icon}
@@ -233,10 +239,7 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 														}`}
 														draggable
 														onClick={(e) => handleItemClick(item.id, e.shiftKey, itemsForSection)}
-														onDragStart={(e) => {
-															e.dataTransfer.setData(MEDIA_DRAG_TYPE, item.id);
-															e.dataTransfer.effectAllowed = "copy";
-														}}
+														onDragStart={(e) => handleDragStart(e, item.id)}
 													>
 														<div className="border-border bg-card flex h-12 w-12 items-center justify-center overflow-hidden border">
 															<span className="truncate">{item.icon}</span>
