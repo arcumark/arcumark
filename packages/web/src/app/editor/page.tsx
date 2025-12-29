@@ -120,7 +120,9 @@ function EditorPageContent() {
 	const [topHeight, setTopHeight] = useState(MIN_TOP + 140);
 	const [isLoading, setIsLoading] = useState(true);
 	const [snapEnabled, setSnapEnabled] = useState(true);
-	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort">("select");
+	const [editMode, setEditMode] = useState<"select" | "transform" | "crop" | "distort" | "cut">(
+		"select"
+	);
 	const [isPortrait, setIsPortrait] = useState(false);
 	const [isValidProject, setIsValidProject] = useState(false);
 	const [autoScrollTimeline, setAutoScrollTimeline] = useState(false);
@@ -529,6 +531,69 @@ function EditorPageContent() {
 		}
 	}, [currentTime]);
 
+	const handleSplitClipAtPlayhead = useCallback(() => {
+		const splitTime = currentTime;
+		let didSplit = false;
+
+		setTimeline((prev) => {
+			const nextTracks = prev.tracks.map((track) => {
+				// Find clip at playhead position
+				const clipIndex = track.clips.findIndex((c) => splitTime > c.start && splitTime < c.end);
+
+				if (clipIndex === -1) return track;
+
+				const originalClip = track.clips[clipIndex];
+
+				// Minimum duration check (0.05s or more)
+				const leftDuration = splitTime - originalClip.start;
+				const rightDuration = originalClip.end - splitTime;
+				if (leftDuration < 0.05 || rightDuration < 0.05) {
+					return track;
+				}
+
+				// Generate two new clips
+				const timestamp = Date.now();
+				const originalSourceStart =
+					typeof originalClip.props?.sourceStart === "number" ? originalClip.props.sourceStart : 0;
+				const splitOffset = splitTime - originalClip.start;
+
+				const leftClip: Clip = {
+					...originalClip,
+					id: `${originalClip.id}_L_${timestamp}`,
+					end: splitTime,
+					props: originalClip.props
+						? { ...originalClip.props }
+						: { sourceStart: originalSourceStart },
+				};
+
+				const rightClip: Clip = {
+					...originalClip,
+					id: `${originalClip.id}_R_${timestamp}`,
+					start: splitTime,
+					props: {
+						...(originalClip.props || {}),
+						sourceStart: originalSourceStart + splitOffset,
+					},
+				};
+
+				// Replace original clip with two clips
+				const newClips = [
+					...track.clips.slice(0, clipIndex),
+					leftClip,
+					rightClip,
+					...track.clips.slice(clipIndex + 1),
+				];
+
+				didSplit = true;
+				setSelectedClipId(rightClip.id); // Select right clip
+
+				return { ...track, clips: newClips };
+			});
+
+			return didSplit ? { ...prev, tracks: nextTracks } : prev;
+		});
+	}, [currentTime, setTimeline]);
+
 	const handleDeleteMedia = useCallback(
 		async (ids: string[]) => {
 			try {
@@ -607,10 +672,21 @@ function EditorPageContent() {
 				e.preventDefault();
 				handlePasteClip();
 			}
+			// Split clip at playhead
+			if (e.key.toLowerCase() === "s" && editMode === "cut") {
+				const target = e.target as HTMLElement | null;
+				if (target) {
+					const tag = target.tagName.toLowerCase();
+					if (tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable)
+						return;
+				}
+				e.preventDefault();
+				handleSplitClipAtPlayhead();
+			}
 		};
 		window.addEventListener("keydown", handleKey);
 		return () => window.removeEventListener("keydown", handleKey);
-	}, [handlePasteClip, selectedClip, selectedClipKind]);
+	}, [handlePasteClip, selectedClip, selectedClipKind, editMode, handleSplitClipAtPlayhead]);
 
 	if (isLoading) {
 		return <LoadingScreen />;
@@ -884,6 +960,7 @@ function EditorPageContent() {
 										<SelectItem value="transform">transform</SelectItem>
 										<SelectItem value="crop">crop</SelectItem>
 										<SelectItem value="distort">distort</SelectItem>
+										<SelectItem value="cut">cut</SelectItem>
 									</SelectContent>
 								</Select>
 							</label>
@@ -1027,6 +1104,8 @@ function EditorPageContent() {
 									setSelectedClipId(null);
 								}
 							}}
+							editMode={editMode}
+							onSplitClip={handleSplitClipAtPlayhead}
 						/>
 					</div>
 				</div>

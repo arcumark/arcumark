@@ -18,6 +18,8 @@ type Props = {
 	autoScrollEnabled: boolean;
 	onToggleSnap: (enabled: boolean) => void;
 	onDeleteClip: (clipId: string) => void;
+	editMode?: "select" | "transform" | "crop" | "distort" | "cut";
+	onSplitClip?: () => void;
 };
 
 function trackBadgeClass(kind: Track["kind"]) {
@@ -39,6 +41,8 @@ export function TimelineView({
 	autoScrollEnabled,
 	onToggleSnap,
 	onDeleteClip,
+	editMode,
+	onSplitClip,
 }: Props) {
 	const [muteState, setMuteState] = useState<Record<string, boolean>>({});
 	const [soloState, setSoloState] = useState<Record<string, boolean>>({});
@@ -373,6 +377,23 @@ export function TimelineView({
 									onTimeChange(next);
 								}}
 							/>
+							{editMode === "cut" && (
+								<div
+									className="absolute top-0 z-20 flex items-center justify-center"
+									style={{ left: `${playheadLeft}px`, transform: "translateX(-50%)" }}
+								>
+									<Button
+										variant="default"
+										size="sm"
+										onClick={(e) => {
+											e.stopPropagation();
+											onSplitClip?.();
+										}}
+									>
+										Split
+									</Button>
+								</div>
+							)}
 							{timeline.tracks.map((track) => (
 								<div key={track.id} className="border-card relative h-12 border-b select-none">
 									{preview?.trackId === track.id && (
@@ -399,14 +420,30 @@ export function TimelineView({
 													selectedClipId === clip.id
 														? "border-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.8)]"
 														: "border-border"
-												}`}
+												} ${editMode === "cut" ? "cursor-crosshair" : "cursor-pointer"}`}
 												style={{ left: clipStart, width: clipWidth }}
 												onClick={(e) => {
 													e.stopPropagation();
 													onSelectClip(clip.id);
 												}}
+												onContextMenu={(e) => {
+													e.stopPropagation();
+													if (editMode === "cut") {
+														// Cut mode: split at right-click position
+														e.preventDefault();
+														const clickTime = getSecFromClientX(e.clientX);
+														// Only split within clip bounds
+														if (clickTime > clip.start && clickTime < clip.end) {
+															onTimeChange(clickTime);
+															// Execute split on next frame (after currentTime update)
+															setTimeout(() => onSplitClip?.(), 0);
+														}
+													}
+												}}
 												onMouseDown={(e) => {
 													e.stopPropagation();
+													// Disable dragging in cut mode
+													if (editMode === "cut") return;
 													isDraggingRef.current = true;
 													dragStateRef.current = {
 														clipId: clip.id,

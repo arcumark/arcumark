@@ -266,9 +266,14 @@ export function Viewer({
 			video.src = activeSource.url;
 			video.load();
 		}
+		const sourceStart =
+			activeClip && typeof activeClip.props?.sourceStart === "number"
+				? activeClip.props.sourceStart
+				: 0;
 		const clipOffset = activeClip ? Math.max(0, currentTime - activeClip.start) : 0;
-		if (!Number.isNaN(clipOffset) && Math.abs(video.currentTime - clipOffset) > 0.1) {
-			video.currentTime = clipOffset;
+		const videoTime = sourceStart + clipOffset;
+		if (!Number.isNaN(videoTime) && Math.abs(video.currentTime - videoTime) > 0.1) {
+			video.currentTime = videoTime;
 		}
 		if (!isPlaying) {
 			video.pause();
@@ -294,9 +299,14 @@ export function Viewer({
 			audio.src = activeAudioSource.url;
 			audio.load();
 		}
+		const audioSourceStart =
+			typeof activeAudioClip.props?.sourceStart === "number"
+				? activeAudioClip.props.sourceStart
+				: 0;
 		const clipOffset = Math.max(0, currentTime - activeAudioClip.start);
-		if (!Number.isNaN(clipOffset) && Math.abs(audio.currentTime - clipOffset) > 0.1) {
-			audio.currentTime = clipOffset;
+		const audioTime = audioSourceStart + clipOffset;
+		if (!Number.isNaN(audioTime) && Math.abs(audio.currentTime - audioTime) > 0.1) {
+			audio.currentTime = audioTime;
 		}
 		const volume =
 			typeof activeAudioClip.props?.volume === "number"
