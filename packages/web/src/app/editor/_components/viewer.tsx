@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VideoPreset } from "@arcumark/shared";
 import type { Clip } from "@arcumark/shared";
 import type { MediaItem } from "./media-browser";
@@ -144,6 +144,69 @@ export function Viewer({
 		left: 0,
 		top: 0,
 	});
+	const calculateWipeClipPath = useCallback((direction: string, progress: number): string => {
+		const pct = progress * 100;
+		switch (direction) {
+			case "left":
+				return `inset(0 ${100 - pct}% 0 0)`;
+			case "right":
+				return `inset(0 0 0 ${100 - pct}%)`;
+			case "up":
+				return `inset(${100 - pct}% 0 0 0)`;
+			case "down":
+				return `inset(0 0 ${100 - pct}% 0)`;
+			default:
+				return "none";
+		}
+	}, []);
+
+	// Calculate fade transition opacity
+	const computedOpacity = useMemo(() => {
+		if (!activeClip) return 1;
+
+		const clipProgress = currentTime - activeClip.start;
+		const clipRemaining = activeClip.end - currentTime;
+		let opacityMultiplier = 1.0;
+
+		const fadeIn = Math.min(
+			(activeClip.props?.fadeIn as number) || 0,
+			activeClip.end - activeClip.start
+		);
+		const fadeOut = Math.min(
+			(activeClip.props?.fadeOut as number) || 0,
+			activeClip.end - activeClip.start
+		);
+
+		if (fadeIn > 0 && clipProgress < fadeIn) {
+			opacityMultiplier = Math.max(0, Math.min(1, clipProgress / fadeIn));
+		} else if (fadeOut > 0 && clipRemaining < fadeOut) {
+			opacityMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
+		}
+
+		const baseOpacity = ((activeClip.props?.opacity as number) || 100) / 100;
+		return baseOpacity * opacityMultiplier;
+	}, [activeClip, currentTime]);
+
+	// Calculate wipe transition clip-path
+	const computedClipPath = useMemo(() => {
+		if (!activeClip) return undefined;
+
+		const clipProgress = currentTime - activeClip.start;
+		const clipRemaining = activeClip.end - currentTime;
+		const wipeIn = (activeClip.props?.wipeIn as number) || 0;
+		const wipeOut = (activeClip.props?.wipeOut as number) || 0;
+		const wipeDirection = activeClip.props?.wipeDirection as string;
+
+		if (wipeIn > 0 && clipProgress < wipeIn && wipeDirection) {
+			const progress = clipProgress / wipeIn;
+			return calculateWipeClipPath(wipeDirection, progress);
+		} else if (wipeOut > 0 && clipRemaining < wipeOut && wipeDirection) {
+			const progress = 1 - clipRemaining / wipeOut;
+			return calculateWipeClipPath(wipeDirection, 1 - progress);
+		}
+
+		return undefined;
+	}, [activeClip, currentTime, calculateWipeClipPath]);
 
 	const updateContentRect = useCallback(() => {
 		const container = videoContainerRef.current;
@@ -414,6 +477,24 @@ export function Viewer({
 											ref={videoRef}
 											className="h-full w-full object-contain"
 											style={{
+												opacity: computedOpacity,
+												filter: (() => {
+													if (!activeClip) return undefined;
+													const filters: string[] = [];
+													const brightness =
+														1 + ((activeClip.props?.brightness as number) || 0) / 100;
+													const contrast = 1 + ((activeClip.props?.contrast as number) || 0) / 100;
+													const saturation =
+														1 + ((activeClip.props?.saturation as number) || 0) / 100;
+													const blur = (activeClip.props?.blur as number) || 0;
+
+													if (brightness !== 1) filters.push(`brightness(${brightness})`);
+													if (contrast !== 1) filters.push(`contrast(${contrast})`);
+													if (saturation !== 1) filters.push(`saturate(${saturation})`);
+													if (blur > 0) filters.push(`blur(${blur}px)`);
+
+													return filters.length > 0 ? filters.join(" ") : undefined;
+												})(),
 												transform: (() => {
 													if (!activeClip) return undefined;
 													const tx =
@@ -433,42 +514,44 @@ export function Viewer({
 													}
 													return transforms.length > 0 ? transforms.join(" ") : undefined;
 												})(),
-												clipPath: (() => {
-													const props = activeClip?.props || {};
-													if (
-														typeof props?.tlx === "number" ||
-														typeof props?.tly === "number" ||
-														typeof props?.trx === "number" ||
-														typeof props?.try === "number" ||
-														typeof props?.brx === "number" ||
-														typeof props?.bry === "number" ||
-														typeof props?.blx === "number" ||
-														typeof props?.bly === "number"
-													) {
-														const tlx = (props.tlx as number) || 0;
-														const tly = (props.tly as number) || 0;
-														const trx = (props.trx as number) || 0;
-														const trY = (props.try as number) || 0;
-														const brx = (props.brx as number) || 0;
-														const bry = (props.bry as number) || 0;
-														const blx = (props.blx as number) || 0;
-														const bly = (props.bly as number) || 0;
-														return `polygon(${0 + tlx}% ${0 + tly}%, ${100 + trx}% ${0 + trY}%, ${100 + brx}% ${100 + bry}%, ${0 + blx}% ${100 + bly}%)`;
-													}
-													if (
-														typeof props?.cropTop === "number" ||
-														typeof props?.cropRight === "number" ||
-														typeof props?.cropBottom === "number" ||
-														typeof props?.cropLeft === "number"
-													) {
-														const top = props.cropTop ?? 0;
-														const right = props.cropRight ?? 0;
-														const bottom = props.cropBottom ?? 0;
-														const left = props.cropLeft ?? 0;
-														return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
-													}
-													return undefined;
-												})(),
+												clipPath:
+													computedClipPath ||
+													(() => {
+														const props = activeClip?.props || {};
+														if (
+															typeof props?.tlx === "number" ||
+															typeof props?.tly === "number" ||
+															typeof props?.trx === "number" ||
+															typeof props?.try === "number" ||
+															typeof props?.brx === "number" ||
+															typeof props?.bry === "number" ||
+															typeof props?.blx === "number" ||
+															typeof props?.bly === "number"
+														) {
+															const tlx = (props.tlx as number) || 0;
+															const tly = (props.tly as number) || 0;
+															const trx = (props.trx as number) || 0;
+															const trY = (props.try as number) || 0;
+															const brx = (props.brx as number) || 0;
+															const bry = (props.bry as number) || 0;
+															const blx = (props.blx as number) || 0;
+															const bly = (props.bly as number) || 0;
+															return `polygon(${0 + tlx}% ${0 + tly}%, ${100 + trx}% ${0 + trY}%, ${100 + brx}% ${100 + bry}%, ${0 + blx}% ${100 + bly}%)`;
+														}
+														if (
+															typeof props?.cropTop === "number" ||
+															typeof props?.cropRight === "number" ||
+															typeof props?.cropBottom === "number" ||
+															typeof props?.cropLeft === "number"
+														) {
+															const top = props.cropTop ?? 0;
+															const right = props.cropRight ?? 0;
+															const bottom = props.cropBottom ?? 0;
+															const left = props.cropLeft ?? 0;
+															return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
+														}
+														return undefined;
+													})(),
 											}}
 										>
 											<track kind="captions" />

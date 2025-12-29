@@ -357,7 +357,36 @@ function ExportPageContent() {
 			setProgress(1);
 		};
 
-		const drawClipToCanvas = (clip: Clip, element: HTMLVideoElement | HTMLImageElement) => {
+		const applyWipeClip = (
+			ctx: CanvasRenderingContext2D,
+			direction: string,
+			progress: number,
+			width: number,
+			height: number
+		) => {
+			ctx.beginPath();
+			switch (direction) {
+				case "left":
+					ctx.rect(0, 0, width * progress, height);
+					break;
+				case "right":
+					ctx.rect(width * (1 - progress), 0, width * progress, height);
+					break;
+				case "up":
+					ctx.rect(0, height * (1 - progress), width, height * progress);
+					break;
+				case "down":
+					ctx.rect(0, 0, width, height * progress);
+					break;
+			}
+			ctx.clip();
+		};
+
+		const drawClipToCanvas = (
+			clip: Clip,
+			element: HTMLVideoElement | HTMLImageElement,
+			timeSec: number
+		) => {
 			const mediaWidth =
 				element instanceof HTMLVideoElement
 					? element.videoWidth
@@ -391,12 +420,57 @@ function ExportPageContent() {
 			const dy = (canvas.height - dh) / 2 + (typeof props.ty === "number" ? props.ty : 0);
 
 			ctx.save();
-			ctx.globalAlpha = clampOpacity(props.opacity, 1);
+
+			// Calculate wipe and fade timing
+			const clipProgress = timeSec - clip.start;
+			const clipRemaining = clip.end - timeSec;
+
+			// Apply wipe clipping
+			const wipeIn = (props.wipeIn as number) || 0;
+			const wipeOut = (props.wipeOut as number) || 0;
+			const wipeDirection = props.wipeDirection as string;
+
+			if (wipeIn > 0 && clipProgress < wipeIn && wipeDirection) {
+				const progress = clipProgress / wipeIn;
+				applyWipeClip(ctx, wipeDirection, progress, canvas.width, canvas.height);
+			} else if (wipeOut > 0 && clipRemaining < wipeOut && wipeDirection) {
+				const progress = 1 - clipRemaining / wipeOut;
+				applyWipeClip(ctx, wipeDirection, 1 - progress, canvas.width, canvas.height);
+			}
+
+			// Apply effects filters
+			const filters = [];
+			const brightness = 1 + ((props.brightness as number) || 0) / 100;
+			const contrast = 1 + ((props.contrast as number) || 0) / 100;
+			const saturation = 1 + ((props.saturation as number) || 0) / 100;
+			const blur = (props.blur as number) || 0;
+
+			if (brightness !== 1) filters.push(`brightness(${brightness})`);
+			if (contrast !== 1) filters.push(`contrast(${contrast})`);
+			if (saturation !== 1) filters.push(`saturate(${saturation})`);
+			if (blur > 0) filters.push(`blur(${blur}px)`);
+
+			ctx.filter = filters.length > 0 ? filters.join(" ") : "none";
+
+			// Calculate fade transition opacity
+			let opacityMultiplier = 1.0;
+			const fadeIn = Math.min((props.fadeIn as number) || 0, clip.end - clip.start);
+			const fadeOut = Math.min((props.fadeOut as number) || 0, clip.end - clip.start);
+
+			if (fadeIn > 0 && clipProgress < fadeIn) {
+				opacityMultiplier = Math.max(0, Math.min(1, clipProgress / fadeIn));
+			} else if (fadeOut > 0 && clipRemaining < fadeOut) {
+				opacityMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
+			}
+
+			const baseOpacity = clampOpacity(props.opacity, 100) / 100;
+			ctx.globalAlpha = baseOpacity * opacityMultiplier;
+
 			ctx.drawImage(element, sx, sy, sw, sh, dx, dy, dw, dh);
 			ctx.restore();
 		};
 
-		const drawTextClip = (clip: Clip) => {
+		const drawTextClip = (clip: Clip, timeSec: number) => {
 			const props = clip.props || {};
 			const text =
 				typeof props.text === "string" && props.text.length > 0 ? (props.text as string) : "Text";
@@ -422,12 +496,28 @@ function ExportPageContent() {
 			const posY = (yPct / 100) * canvas.height;
 			const lines = text.split("\n");
 
+			// Calculate fade transition opacity
+			const clipProgress = timeSec - clip.start;
+			const clipRemaining = clip.end - timeSec;
+			let opacityMultiplier = 1.0;
+
+			const fadeIn = Math.min((props.fadeIn as number) || 0, clip.end - clip.start);
+			const fadeOut = Math.min((props.fadeOut as number) || 0, clip.end - clip.start);
+
+			if (fadeIn > 0 && clipProgress < fadeIn) {
+				opacityMultiplier = Math.max(0, Math.min(1, clipProgress / fadeIn));
+			} else if (fadeOut > 0 && clipRemaining < fadeOut) {
+				opacityMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
+			}
+
+			const baseOpacity = clampOpacity(props.opacity, 100) / 100;
+
 			ctx.save();
 			ctx.translate(posX, posY);
 			ctx.rotate((rotation * Math.PI) / 180);
 			ctx.textAlign = align;
 			ctx.textBaseline = "middle";
-			ctx.globalAlpha = clampOpacity(props.opacity, 1);
+			ctx.globalAlpha = baseOpacity * opacityMultiplier;
 			ctx.fillStyle = color;
 			ctx.font = `${size}px ${
 				typeof props.font === "string" && props.font.length > 0
@@ -470,9 +560,9 @@ function ExportPageContent() {
 						});
 					}
 					currentVideoClipId = videoClip.id;
-					drawClipToCanvas(videoClip, videoEl);
+					drawClipToCanvas(videoClip, videoEl, timeSec);
 				} else if (source.type === "image") {
-					drawClipToCanvas(videoClip, source.element);
+					drawClipToCanvas(videoClip, source.element, timeSec);
 					currentVideoClipId = videoClip.id;
 				}
 			} else {
@@ -480,7 +570,7 @@ function ExportPageContent() {
 			}
 
 			const textClips = timeline ? findActiveTextClips(timeline, timeSec) : [];
-			textClips.forEach(drawTextClip);
+			textClips.forEach((tc) => drawTextClip(tc, timeSec));
 
 			const audioClip = timeline && findActiveClip(timeline, "audio", timeSec);
 			if (audioClip) {
@@ -497,15 +587,38 @@ function ExportPageContent() {
 					} else if (Math.abs(audioElement.currentTime - offset) > 0.2) {
 						audioElement.currentTime = offset;
 					}
-					const volume =
+
+					// Calculate fade transition volume
+					const clipProgress = timeSec - audioClip.start;
+					const clipRemaining = audioClip.end - timeSec;
+					let volumeMultiplier = 1.0;
+
+					const fadeIn = Math.min(
+						(audioClip.props?.fadeIn as number) || 0,
+						audioClip.end - audioClip.start
+					);
+					const fadeOut = Math.min(
+						(audioClip.props?.fadeOut as number) || 0,
+						audioClip.end - audioClip.start
+					);
+
+					if (fadeIn > 0 && clipProgress < fadeIn) {
+						volumeMultiplier = Math.max(0, Math.min(1, clipProgress / fadeIn));
+					} else if (fadeOut > 0 && clipRemaining < fadeOut) {
+						volumeMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
+					}
+
+					const baseVolume =
 						typeof audioClip.props?.volume === "number"
 							? Math.min(1, Math.max(0, audioClip.props.volume / 100))
 							: 1;
+					const finalVolume = baseVolume * volumeMultiplier;
+
 					if (audioGainRef.current) {
-						audioGainRef.current.gain.value = volume;
+						audioGainRef.current.gain.value = finalVolume;
 						audioElement.volume = 0; // keep local output silent
 					} else {
-						audioElement.volume = volume;
+						audioElement.volume = finalVolume;
 					}
 				}
 			} else if (!audioElement.paused) {

@@ -453,6 +453,26 @@ export function TimelineView({
 													};
 												}}
 											>
+												{/* Fade In Indicator */}
+												{typeof clip.props?.fadeIn === "number" && clip.props.fadeIn > 0 && (
+													<div
+														className="pointer-events-none absolute top-0 bottom-0 left-0 bg-linear-to-r from-amber-500/30 to-transparent"
+														style={{
+															width: `${Math.min((clip.props.fadeIn / (clip.end - clip.start)) * 100, 100)}%`,
+														}}
+													/>
+												)}
+
+												{/* Fade Out Indicator */}
+												{typeof clip.props?.fadeOut === "number" && clip.props.fadeOut > 0 && (
+													<div
+														className="pointer-events-none absolute top-0 right-0 bottom-0 bg-linear-to-l from-amber-500/30 to-transparent"
+														style={{
+															width: `${Math.min((clip.props.fadeOut / (clip.end - clip.start)) * 100, 100)}%`,
+														}}
+													/>
+												)}
+
 												<span className="truncate">{clip.id}</span>
 												<span>{(clip.end - clip.start).toFixed(1)}s</span>
 											</div>

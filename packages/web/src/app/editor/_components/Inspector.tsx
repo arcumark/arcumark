@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 type Props = {
 	clip: Clip | null;
@@ -224,6 +225,174 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						</div>
 					)}
 				</div>
+
+				{/* Transitions Section */}
+				<Label className="text-xs font-semibold">Transitions</Label>
+				<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-2">
+						<Label>Fade In (s)</Label>
+						<Input
+							type="number"
+							min={0}
+							max={10}
+							step={0.1}
+							value={(clip.props?.fadeIn as number) || 0}
+							onChange={(e) =>
+								onChange({
+									props: { ...clip.props, fadeIn: parseFloat(e.target.value) || 0 },
+								})
+							}
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label>Fade Out (s)</Label>
+						<Input
+							type="number"
+							min={0}
+							max={10}
+							step={0.1}
+							value={(clip.props?.fadeOut as number) || 0}
+							onChange={(e) =>
+								onChange({
+									props: { ...clip.props, fadeOut: parseFloat(e.target.value) || 0 },
+								})
+							}
+						/>
+					</div>
+				</div>
+				<div className="grid gap-2">
+					<Label>Wipe Direction</Label>
+					<Select
+						value={(clip.props?.wipeDirection as string) || "none"}
+						onValueChange={(value) =>
+							onChange({
+								props: { ...clip.props, wipeDirection: value === "none" ? null : value },
+							})
+						}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="none">None</SelectItem>
+							<SelectItem value="left">Left</SelectItem>
+							<SelectItem value="right">Right</SelectItem>
+							<SelectItem value="up">Up</SelectItem>
+							<SelectItem value="down">Down</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-2">
+						<Label>Wipe In (s)</Label>
+						<Input
+							type="number"
+							min={0}
+							max={10}
+							step={0.1}
+							value={(clip.props?.wipeIn as number) || 0}
+							onChange={(e) =>
+								onChange({
+									props: { ...clip.props, wipeIn: parseFloat(e.target.value) || 0 },
+								})
+							}
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label>Wipe Out (s)</Label>
+						<Input
+							type="number"
+							min={0}
+							max={10}
+							step={0.1}
+							value={(clip.props?.wipeOut as number) || 0}
+							onChange={(e) =>
+								onChange({
+									props: { ...clip.props, wipeOut: parseFloat(e.target.value) || 0 },
+								})
+							}
+						/>
+					</div>
+				</div>
+
+				{/* Effects Section */}
+				<Label className="text-xs font-semibold">Effects</Label>
+				<div className="grid gap-2">
+					<div className="grid gap-2">
+						<Label>Brightness ({((clip.props?.brightness as number) || 0).toFixed(0)})</Label>
+						<Slider
+							min={-100}
+							max={100}
+							step={1}
+							value={[(clip.props?.brightness as number) || 0]}
+							onValueChange={(values) =>
+								onChange({
+									props: { ...clip.props, brightness: Array.isArray(values) ? values[0] : values },
+								})
+							}
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label>Contrast ({((clip.props?.contrast as number) || 0).toFixed(0)})</Label>
+						<Slider
+							min={-100}
+							max={100}
+							step={1}
+							value={[(clip.props?.contrast as number) || 0]}
+							onValueChange={(values) =>
+								onChange({
+									props: { ...clip.props, contrast: Array.isArray(values) ? values[0] : values },
+								})
+							}
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label>Saturation ({((clip.props?.saturation as number) || 0).toFixed(0)})</Label>
+						<Slider
+							min={-100}
+							max={100}
+							step={1}
+							value={[(clip.props?.saturation as number) || 0]}
+							onValueChange={(values) =>
+								onChange({
+									props: { ...clip.props, saturation: Array.isArray(values) ? values[0] : values },
+								})
+							}
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label>Blur ({((clip.props?.blur as number) || 0).toFixed(1)}px)</Label>
+						<Slider
+							min={0}
+							max={20}
+							step={0.5}
+							value={[(clip.props?.blur as number) || 0]}
+							onValueChange={(values) =>
+								onChange({
+									props: { ...clip.props, blur: Array.isArray(values) ? values[0] : values },
+								})
+							}
+						/>
+					</div>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							onChange({
+								props: {
+									...clip.props,
+									brightness: 0,
+									contrast: 0,
+									saturation: 0,
+									blur: 0,
+								},
+							})
+						}
+					>
+						Reset Effects
+					</Button>
+				</div>
+
 				{clipKind === "video" && (
 					<>
 						<Label className="text-xs font-semibold">Transform</Label>
