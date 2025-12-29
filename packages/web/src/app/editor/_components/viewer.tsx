@@ -684,7 +684,7 @@ export function Viewer({
 						style={{ left: `${(duration === 0 ? 0 : (currentTime / duration) * 100).toFixed(3)}%` }}
 					/>
 				</div>
-				<div className="flex flex-none items-center justify-between text-xs">
+				<div className="flex flex-none items-center justify-between space-x-2 text-xs">
 					<div className="select-none">Zoom</div>
 					<Slider
 						className="w-40"
