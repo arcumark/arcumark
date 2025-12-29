@@ -6,6 +6,7 @@ import {
 	readAllMediaRecords,
 	saveMediaRecord,
 	updateMediaDuration,
+	deleteMediaRecords,
 } from "@/lib/client/media-store";
 import { VIDEO_PRESETS } from "@arcumark/shared";
 import { Clip, Timeline, Track, validateTimeline } from "@arcumark/shared";
@@ -523,6 +524,47 @@ function EditorPageContent() {
 		}
 	}, [currentTime]);
 
+	const handleDeleteMedia = useCallback(
+		async (ids: string[]) => {
+			try {
+				await deleteMediaRecords(ids);
+				// Remove deleted items from state and revoke their URLs
+				setMediaItems((prev) => {
+					const deleted = prev.filter((item) => ids.includes(item.id));
+					deleted.forEach((item) => {
+						if (item.url) {
+							URL.revokeObjectURL(item.url);
+						}
+					});
+					return prev.filter((item) => !ids.includes(item.id));
+				});
+
+				// Remove clips that reference deleted media from timeline
+				setTimeline((prev) => {
+					const nextTracks = prev.tracks
+						.map((track) => ({
+							...track,
+							clips: track.clips.filter((clip) => !ids.includes(clip.sourceId)),
+						}))
+						.filter((track) => track.clips.length > 0);
+					return { ...prev, tracks: nextTracks };
+				});
+
+				// Clear selection if selected clip was deleted
+				setSelectedClipId((prev) => {
+					if (!prev) return null;
+					const isDeleted = timeline.tracks.some((track) =>
+						track.clips.some((clip) => clip.id === prev && ids.includes(clip.sourceId))
+					);
+					return isDeleted ? null : prev;
+				});
+			} catch (e) {
+				console.error("Failed to delete media", e);
+			}
+		},
+		[timeline.tracks]
+	);
+
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const handleKey = (e: KeyboardEvent) => {
@@ -652,7 +694,11 @@ function EditorPageContent() {
 							Library
 						</div>
 						<div className="flex flex-1 overflow-hidden">
-							<MediaBrowser items={mediaItems} onImport={handleImportMedia} />
+							<MediaBrowser
+								items={mediaItems}
+								onImport={handleImportMedia}
+								onDelete={handleDeleteMedia}
+							/>
 						</div>
 					</div>
 					{!isPortrait && (

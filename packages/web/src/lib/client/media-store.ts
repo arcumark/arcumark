@@ -68,3 +68,17 @@ export async function updateMediaDuration(id: string, durationSeconds: number) {
 		tx.onerror = () => reject(tx.error);
 	});
 }
+
+export async function deleteMediaRecords(ids: string[]) {
+	const db = await openMediaDb();
+	if (!db) return;
+	return new Promise<void>((resolve, reject) => {
+		const tx = db.transaction(MEDIA_STORE, "readwrite");
+		const store = tx.objectStore(MEDIA_STORE);
+		for (const id of ids) {
+			store.delete(id);
+		}
+		tx.oncomplete = () => resolve();
+		tx.onerror = () => reject(tx.error);
+	});
+}
