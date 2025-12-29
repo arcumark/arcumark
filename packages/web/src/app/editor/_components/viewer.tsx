@@ -12,6 +12,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { AudioProcessor } from "@/lib/audio/audio-processor";
+import { getAudioContext } from "@/lib/audio/audio-context";
+import { calculateNormalizeGain } from "@/lib/audio/normalize";
 
 type PresetOption = VideoPreset;
 
@@ -347,6 +350,8 @@ export function Viewer({
 		}
 	}, [activeSource?.url, activeClip, currentTime, isPlaying]);
 
+	const audioProcessorRef = useRef<AudioProcessor | null>(null);
+
 	useEffect(() => {
 		const audio = audioRef.current;
 		if (!audio || !activeAudioSource?.url || !activeAudioClip) {
@@ -355,27 +360,89 @@ export function Viewer({
 				audio.removeAttribute("src");
 				audio.load();
 			}
+			if (audioProcessorRef.current) {
+				audioProcessorRef.current.destroy();
+				audioProcessorRef.current = null;
+			}
 			return;
 		}
+
+		// Initialize AudioProcessor if needed
+		if (!audioProcessorRef.current) {
+			try {
+				const audioContext = getAudioContext();
+				audioProcessorRef.current = new AudioProcessor();
+				audioProcessorRef.current.attachSource(audio);
+				audioProcessorRef.current.connect(audioContext.destination);
+			} catch (error) {
+				console.error("Failed to initialize AudioProcessor:", error);
+				// Fallback to basic audio if Web Audio API fails
+			}
+		}
+
 		const needsSrcUpdate = audio.src !== activeAudioSource.url;
 		if (needsSrcUpdate) {
 			audio.src = activeAudioSource.url;
 			audio.load();
 		}
+
 		const audioSourceStart =
 			typeof activeAudioClip.props?.sourceStart === "number"
 				? activeAudioClip.props.sourceStart
 				: 0;
 		const clipOffset = Math.max(0, currentTime - activeAudioClip.start);
 		const audioTime = audioSourceStart + clipOffset;
+
 		if (!Number.isNaN(audioTime) && Math.abs(audio.currentTime - audioTime) > 0.1) {
 			audio.currentTime = audioTime;
 		}
-		const volume =
+
+		// Update audio processor settings (EQ, effects, etc.)
+		if (audioProcessorRef.current) {
+			audioProcessorRef.current.updateSettings(activeAudioClip.props || {});
+		}
+
+		// Calculate final volume (base volume * fade * normalize)
+		const clipProgress = currentTime - activeAudioClip.start;
+		const clipRemaining = activeAudioClip.end - currentTime;
+		let volumeMultiplier = 1.0;
+
+		const fadeIn = Math.min(
+			(activeAudioClip.props?.fadeIn as number) || 0,
+			activeAudioClip.end - activeAudioClip.start
+		);
+		const fadeOut = Math.min(
+			(activeAudioClip.props?.fadeOut as number) || 0,
+			activeAudioClip.end - activeAudioClip.start
+		);
+
+		if (fadeIn > 0 && clipProgress < fadeIn) {
+			volumeMultiplier = Math.max(0, Math.min(1, clipProgress / fadeIn));
+		} else if (fadeOut > 0 && clipRemaining < fadeOut) {
+			volumeMultiplier = Math.max(0, Math.min(1, clipRemaining / fadeOut));
+		}
+
+		const baseVolume =
 			typeof activeAudioClip.props?.volume === "number"
 				? Math.min(1, Math.max(0, activeAudioClip.props.volume / 100))
 				: 1;
-		audio.volume = volume;
+		let finalVolume = baseVolume * volumeMultiplier;
+
+		// Apply normalization if enabled
+		if (activeAudioClip.props?.normalizeEnabled) {
+			const peakLevel = (activeAudioClip.props?.peakLevelDb as number) || 0;
+			const targetLevel = (activeAudioClip.props?.normalizeTarget as number) || -1;
+			const normalizeGain = calculateNormalizeGain(peakLevel, targetLevel);
+			finalVolume *= normalizeGain;
+		}
+
+		if (audioProcessorRef.current) {
+			audioProcessorRef.current.setVolume(finalVolume);
+		} else {
+			// Fallback to direct volume control if AudioProcessor failed
+			audio.volume = finalVolume;
+		}
+
 		if (!isPlaying) {
 			audio.pause();
 		} else if (audio.paused) {

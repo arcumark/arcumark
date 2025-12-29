@@ -16,6 +16,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { AudioProcessor } from "@/lib/audio/audio-processor";
+import { getAudioContext } from "@/lib/audio/audio-context";
+import { calculateNormalizeGain } from "@/lib/audio/normalize";
 
 // This page is fully client-side and requires no server-side processing
 export const dynamic = "force-static";
@@ -95,6 +98,7 @@ function ExportPageContent() {
 	const recorderRef = useRef<MediaRecorder | null>(null);
 	const audioContextRef = useRef<AudioContext | null>(null);
 	const audioGainRef = useRef<GainNode | null>(null);
+	const audioProcessorRef = useRef<AudioProcessor | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -262,21 +266,34 @@ function ExportPageContent() {
 		audioElement.muted = false;
 
 		let audioStream: MediaStream | null = null;
+		let audioProcessor: AudioProcessor | null = null;
 		if (typeof AudioContext !== "undefined") {
-			const ctxAudio = new AudioContext();
-			const source = ctxAudio.createMediaElementSource(audioElement);
-			const gain = ctxAudio.createGain();
-			source.connect(gain);
-			const destination = ctxAudio.createMediaStreamDestination();
-			gain.connect(destination);
-			ctxAudio.resume().catch(() => {
-				/* ignore */
-			});
-			audioContextRef.current = ctxAudio;
-			audioGainRef.current = gain;
-			// silence speakers while keeping capture path alive
-			audioElement.volume = 0;
-			audioStream = destination.stream;
+			try {
+				const audioContext = getAudioContext();
+				audioProcessor = new AudioProcessor();
+				audioProcessor.attachSource(audioElement);
+
+				const destination = audioContext.createMediaStreamDestination();
+				audioProcessor.connect(destination);
+
+				audioContext.resume().catch(() => {
+					/* ignore */
+				});
+
+				audioContextRef.current = audioContext;
+				audioProcessorRef.current = audioProcessor;
+
+				// silence speakers while keeping capture path alive
+				audioElement.volume = 0;
+				audioStream = destination.stream;
+			} catch (error) {
+				console.error("Failed to initialize AudioProcessor:", error);
+				// Fallback to basic audio if Web Audio API fails
+				audioStream =
+					(audioElement as unknown as { captureStream?: () => MediaStream }).captureStream?.() ??
+					null;
+				audioElement.volume = 1;
+			}
 		} else {
 			audioStream =
 				(audioElement as unknown as { captureStream?: () => MediaStream }).captureStream?.() ??
@@ -588,6 +605,11 @@ function ExportPageContent() {
 						audioElement.currentTime = offset;
 					}
 
+					// Update audio processor settings (EQ, effects, etc.)
+					if (audioProcessorRef.current) {
+						audioProcessorRef.current.updateSettings(audioClip.props || {});
+					}
+
 					// Calculate fade transition volume
 					const clipProgress = timeSec - audioClip.start;
 					const clipRemaining = audioClip.end - timeSec;
@@ -612,9 +634,20 @@ function ExportPageContent() {
 						typeof audioClip.props?.volume === "number"
 							? Math.min(1, Math.max(0, audioClip.props.volume / 100))
 							: 1;
-					const finalVolume = baseVolume * volumeMultiplier;
+					let finalVolume = baseVolume * volumeMultiplier;
 
-					if (audioGainRef.current) {
+					// Apply normalization if enabled
+					if (audioClip.props?.normalizeEnabled) {
+						const peakLevel = (audioClip.props?.peakLevelDb as number) || 0;
+						const targetLevel = (audioClip.props?.normalizeTarget as number) || -1;
+						const normalizeGain = calculateNormalizeGain(peakLevel, targetLevel);
+						finalVolume *= normalizeGain;
+					}
+
+					if (audioProcessorRef.current) {
+						audioProcessorRef.current.setVolume(finalVolume);
+						audioElement.volume = 0; // keep local output silent
+					} else if (audioGainRef.current) {
 						audioGainRef.current.gain.value = finalVolume;
 						audioElement.volume = 0; // keep local output silent
 					} else {

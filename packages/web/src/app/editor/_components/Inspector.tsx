@@ -14,6 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Props = {
 	clip: Clip | null;
@@ -392,6 +393,285 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						Reset Effects
 					</Button>
 				</div>
+
+				{/* Audio Equalizer Section */}
+				{clipKind === "audio" && (
+					<>
+						<Label className="text-xs font-semibold">Equalizer</Label>
+						<div className="grid gap-2">
+							<div className="grid gap-2">
+								<Label>Low ({((clip.props?.eqLow as number) || 0).toFixed(1)} dB)</Label>
+								<Slider
+									min={-12}
+									max={12}
+									step={0.5}
+									value={[(clip.props?.eqLow as number) || 0]}
+									onValueChange={(values) =>
+										onChange({
+											props: { ...clip.props, eqLow: Array.isArray(values) ? values[0] : values },
+										})
+									}
+								/>
+							</div>
+
+							<div className="grid gap-2">
+								<Label>Mid ({((clip.props?.eqMid as number) || 0).toFixed(1)} dB)</Label>
+								<Slider
+									min={-12}
+									max={12}
+									step={0.5}
+									value={[(clip.props?.eqMid as number) || 0]}
+									onValueChange={(values) =>
+										onChange({
+											props: { ...clip.props, eqMid: Array.isArray(values) ? values[0] : values },
+										})
+									}
+								/>
+							</div>
+
+							<div className="grid gap-2">
+								<Label>High ({((clip.props?.eqHigh as number) || 0).toFixed(1)} dB)</Label>
+								<Slider
+									min={-12}
+									max={12}
+									step={0.5}
+									value={[(clip.props?.eqHigh as number) || 0]}
+									onValueChange={(values) =>
+										onChange({
+											props: { ...clip.props, eqHigh: Array.isArray(values) ? values[0] : values },
+										})
+									}
+								/>
+							</div>
+
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() =>
+									onChange({
+										props: { ...clip.props, eqLow: 0, eqMid: 0, eqHigh: 0 },
+									})
+								}
+							>
+								Reset EQ
+							</Button>
+						</div>
+
+						{/* Audio Effects Section */}
+						<Label className="text-xs font-semibold">Audio Effects</Label>
+						<div className="grid gap-3">
+							{/* Compressor */}
+							<div className="grid gap-2">
+								<div className="flex items-center gap-2">
+									<Checkbox
+										checked={(clip.props?.compressorEnabled as boolean) || false}
+										onCheckedChange={(checked) =>
+											onChange({
+												props: { ...clip.props, compressorEnabled: !!checked },
+											})
+										}
+									/>
+									<Label>Compressor</Label>
+								</div>
+								{(clip.props?.compressorEnabled as boolean) && (
+									<>
+										<div className="grid gap-2 pl-6">
+											<Label>
+												Threshold ({((clip.props?.compressorThreshold as number) || -24).toFixed(0)}{" "}
+												dB)
+											</Label>
+											<Slider
+												min={-100}
+												max={0}
+												step={1}
+												value={[(clip.props?.compressorThreshold as number) || -24]}
+												onValueChange={(values) =>
+													onChange({
+														props: {
+															...clip.props,
+															compressorThreshold: Array.isArray(values) ? values[0] : values,
+														},
+													})
+												}
+											/>
+										</div>
+										<div className="grid gap-2 pl-6">
+											<Label>
+												Ratio ({((clip.props?.compressorRatio as number) || 12).toFixed(1)}:1)
+											</Label>
+											<Slider
+												min={1}
+												max={20}
+												step={0.5}
+												value={[(clip.props?.compressorRatio as number) || 12]}
+												onValueChange={(values) =>
+													onChange({
+														props: {
+															...clip.props,
+															compressorRatio: Array.isArray(values) ? values[0] : values,
+														},
+													})
+												}
+											/>
+										</div>
+									</>
+								)}
+							</div>
+
+							{/* Delay / Echo */}
+							<div className="grid gap-2">
+								<div className="flex items-center gap-2">
+									<Checkbox
+										checked={(clip.props?.delayEnabled as boolean) || false}
+										onCheckedChange={(checked) =>
+											onChange({
+												props: { ...clip.props, delayEnabled: !!checked },
+											})
+										}
+									/>
+									<Label>Delay / Echo</Label>
+								</div>
+								{(clip.props?.delayEnabled as boolean) && (
+									<>
+										<div className="grid gap-2 pl-6">
+											<Label>
+												Time ({((clip.props?.delayTime as number) || 0.5).toFixed(2)} s)
+											</Label>
+											<Slider
+												min={0}
+												max={2}
+												step={0.01}
+												value={[(clip.props?.delayTime as number) || 0.5]}
+												onValueChange={(values) =>
+													onChange({
+														props: {
+															...clip.props,
+															delayTime: Array.isArray(values) ? values[0] : values,
+														},
+													})
+												}
+											/>
+										</div>
+										<div className="grid gap-2 pl-6">
+											<Label>
+												Feedback ({((clip.props?.delayFeedback as number) || 0.4).toFixed(2)})
+											</Label>
+											<Slider
+												min={0}
+												max={0.9}
+												step={0.01}
+												value={[(clip.props?.delayFeedback as number) || 0.4]}
+												onValueChange={(values) =>
+													onChange({
+														props: {
+															...clip.props,
+															delayFeedback: Array.isArray(values) ? values[0] : values,
+														},
+													})
+												}
+											/>
+										</div>
+									</>
+								)}
+							</div>
+
+							{/* Reverb */}
+							<div className="grid gap-2">
+								<div className="flex items-center gap-2">
+									<Checkbox
+										checked={(clip.props?.reverbEnabled as boolean) || false}
+										onCheckedChange={(checked) =>
+											onChange({
+												props: { ...clip.props, reverbEnabled: !!checked },
+											})
+										}
+									/>
+									<Label>Reverb</Label>
+								</div>
+								{(clip.props?.reverbEnabled as boolean) && (
+									<>
+										<div className="grid gap-2 pl-6">
+											<Label>Room Type</Label>
+											<Select
+												value={(clip.props?.reverbType as string) || "medium"}
+												onValueChange={(value) =>
+													onChange({
+														props: { ...clip.props, reverbType: value },
+													})
+												}
+											>
+												<SelectTrigger>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="small">Small Room</SelectItem>
+													<SelectItem value="medium">Medium Room</SelectItem>
+													<SelectItem value="large">Large Hall</SelectItem>
+													<SelectItem value="hall">Concert Hall</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+										<div className="grid gap-2 pl-6">
+											<Label>Mix ({((clip.props?.reverbMix as number) || 0.3).toFixed(2)})</Label>
+											<Slider
+												min={0}
+												max={1}
+												step={0.01}
+												value={[(clip.props?.reverbMix as number) || 0.3]}
+												onValueChange={(values) =>
+													onChange({
+														props: {
+															...clip.props,
+															reverbMix: Array.isArray(values) ? values[0] : values,
+														},
+													})
+												}
+											/>
+										</div>
+									</>
+								)}
+							</div>
+						</div>
+
+						{/* Normalization Section */}
+						<Label className="text-xs font-semibold">Normalization</Label>
+						<div className="grid gap-2">
+							<div className="flex items-center gap-2">
+								<Checkbox
+									checked={(clip.props?.normalizeEnabled as boolean) || false}
+									onCheckedChange={(checked) =>
+										onChange({
+											props: { ...clip.props, normalizeEnabled: !!checked },
+										})
+									}
+								/>
+								<Label>Auto-normalize volume</Label>
+							</div>
+
+							{(clip.props?.normalizeEnabled as boolean) && (
+								<div className="grid gap-2 pl-6">
+									<Label>
+										Target Level ({((clip.props?.normalizeTarget as number) || -1).toFixed(1)} dB)
+									</Label>
+									<Slider
+										min={-3}
+										max={0}
+										step={0.1}
+										value={[(clip.props?.normalizeTarget as number) || -1]}
+										onValueChange={(values) =>
+											onChange({
+												props: {
+													...clip.props,
+													normalizeTarget: Array.isArray(values) ? values[0] : values,
+												},
+											})
+										}
+									/>
+								</div>
+							)}
+						</div>
+					</>
+				)}
 
 				{clipKind === "video" && (
 					<>
