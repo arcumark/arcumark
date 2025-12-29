@@ -15,6 +15,8 @@ type Props = {
 	onStop: () => void;
 	onStep: (delta: number) => void;
 	onLoopToggle: () => void;
+	onFrameStep?: (frames: number) => void; // Frame-by-frame stepping
+	fps?: number; // FPS for frame duration calculation
 };
 
 export function TopBar({
@@ -27,6 +29,7 @@ export function TopBar({
 	onStop,
 	onStep,
 	onLoopToggle,
+	onFrameStep,
 }: Props) {
 	return (
 		<div className="border-border bg-card flex h-12 items-center gap-3 border-b px-3">
@@ -64,6 +67,28 @@ export function TopBar({
 				>
 					<SkipForward />
 				</Button>
+				{onFrameStep && (
+					<div className="ml-2 flex items-center gap-1 border-l pl-2">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => onFrameStep(-1)}
+							aria-label="Step back 1 frame"
+							title="Previous frame (,)"
+						>
+							-1F
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => onFrameStep(1)}
+							aria-label="Step forward 1 frame"
+							title="Next frame (.)"
+						>
+							+1F
+						</Button>
+					</div>
+				)}
 				<Button
 					variant={loop ? "default" : "outline"}
 					size="icon"

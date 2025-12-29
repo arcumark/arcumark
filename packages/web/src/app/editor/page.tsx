@@ -594,6 +594,18 @@ function EditorPageContent() {
 		});
 	}, [currentTime, setTimeline]);
 
+	const handleFrameStep = useCallback(
+		(frames: number) => {
+			const fps = 30; // Default FPS
+			const frameDuration = 1 / fps;
+			setCurrentTime((prev) => {
+				const next = prev + frames * frameDuration;
+				return Math.max(0, Math.min(next, timeline.duration));
+			});
+		},
+		[timeline.duration]
+	);
+
 	const handleDeleteMedia = useCallback(
 		async (ids: string[]) => {
 			try {
@@ -683,10 +695,32 @@ function EditorPageContent() {
 				e.preventDefault();
 				handleSplitClipAtPlayhead();
 			}
+			// Frame stepping: , (comma) = back, . (period) = forward
+			if (e.key === "," || e.key === ".") {
+				const target = e.target as HTMLElement | null;
+				if (target) {
+					const tag = target.tagName.toLowerCase();
+					if (tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable)
+						return;
+				}
+				e.preventDefault();
+
+				const fps = 30; // Default FPS
+				const frameDuration = 1 / fps;
+				const delta = e.key === "," ? -frameDuration : frameDuration;
+				setCurrentTime((prev) => Math.max(0, Math.min(prev + delta, timeline.duration)));
+			}
 		};
 		window.addEventListener("keydown", handleKey);
 		return () => window.removeEventListener("keydown", handleKey);
-	}, [handlePasteClip, selectedClip, selectedClipKind, editMode, handleSplitClipAtPlayhead]);
+	}, [
+		handlePasteClip,
+		selectedClip,
+		selectedClipKind,
+		editMode,
+		handleSplitClipAtPlayhead,
+		timeline.duration,
+	]);
 
 	if (isLoading) {
 		return <LoadingScreen />;
@@ -761,6 +795,8 @@ function EditorPageContent() {
 					setCurrentTime((prev) => Math.min(Math.max(prev + delta, 0), timeline.duration));
 				}}
 				onLoopToggle={() => setLoop((p) => !p)}
+				onFrameStep={handleFrameStep}
+				fps={30}
 			/>
 			<div className="flex flex-1 flex-col gap-2 overflow-hidden p-2">
 				<div

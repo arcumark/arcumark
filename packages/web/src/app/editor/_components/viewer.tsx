@@ -15,6 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { AudioProcessor } from "@/lib/audio/audio-processor";
 import { getAudioContext } from "@/lib/audio/audio-context";
 import { calculateNormalizeGain } from "@/lib/audio/normalize";
+import { calculateSourceTime } from "@/lib/timing/speed-utils";
 
 type PresetOption = VideoPreset;
 
@@ -337,10 +338,17 @@ export function Viewer({
 				? activeClip.props.sourceStart
 				: 0;
 		const clipOffset = activeClip ? Math.max(0, currentTime - activeClip.start) : 0;
-		const videoTime = sourceStart + clipOffset;
+		const videoTime = calculateSourceTime(clipOffset, activeClip?.props || {}, sourceStart);
 		if (!Number.isNaN(videoTime) && Math.abs(video.currentTime - videoTime) > 0.1) {
-			video.currentTime = videoTime;
+			video.currentTime = Math.max(0, videoTime);
 		}
+
+		// Apply playback speed (basic speed only, not for speed ramping)
+		const playbackSpeed =
+			activeClip?.props && typeof activeClip.props.playbackSpeed === "number"
+				? activeClip.props.playbackSpeed
+				: 1.0;
+		video.playbackRate = Math.abs(playbackSpeed); // HTML5 doesn't support negative values
 		if (!isPlaying) {
 			video.pause();
 		} else if (video.paused) {
@@ -391,11 +399,22 @@ export function Viewer({
 				? activeAudioClip.props.sourceStart
 				: 0;
 		const clipOffset = Math.max(0, currentTime - activeAudioClip.start);
-		const audioTime = audioSourceStart + clipOffset;
+		const audioTime = calculateSourceTime(
+			clipOffset,
+			activeAudioClip.props || {},
+			audioSourceStart
+		);
 
 		if (!Number.isNaN(audioTime) && Math.abs(audio.currentTime - audioTime) > 0.1) {
-			audio.currentTime = audioTime;
+			audio.currentTime = Math.max(0, audioTime);
 		}
+
+		// Apply playback speed for audio
+		const audioSpeed =
+			typeof activeAudioClip.props?.playbackSpeed === "number"
+				? Math.abs(activeAudioClip.props.playbackSpeed)
+				: 1.0;
+		audio.playbackRate = audioSpeed;
 
 		// Update audio processor settings (EQ, effects, etc.)
 		if (audioProcessorRef.current) {

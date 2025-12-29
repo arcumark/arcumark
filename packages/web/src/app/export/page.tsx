@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { AudioProcessor } from "@/lib/audio/audio-processor";
 import { getAudioContext } from "@/lib/audio/audio-context";
 import { calculateNormalizeGain } from "@/lib/audio/normalize";
+import { calculateSourceTime } from "@/lib/timing/speed-utils";
 
 // This page is fully client-side and requires no server-side processing
 export const dynamic = "force-static";
@@ -564,9 +565,24 @@ function ExportPageContent() {
 				if (source.type === "video") {
 					const videoEl = source.element;
 					const offset = Math.max(0, timeSec - videoClip.start);
-					if (Math.abs(videoEl.currentTime - offset) > 0.1 && !videoEl.seeking) {
+					const sourceStart =
+						typeof videoClip.props?.sourceStart === "number" ? videoClip.props.sourceStart : 0;
+					const videoTime = calculateSourceTime(offset, videoClip.props || {}, sourceStart);
+
+					// Apply playback speed (basic speed only, not for speed ramping)
+					if (!videoClip.props?.speedRampingEnabled) {
+						const speed =
+							typeof videoClip.props?.playbackSpeed === "number"
+								? videoClip.props.playbackSpeed
+								: 1.0;
+						videoEl.playbackRate = Math.abs(speed);
+					} else {
+						videoEl.playbackRate = 1.0; // Speed ramping uses seeking only
+					}
+
+					if (Math.abs(videoEl.currentTime - videoTime) > 0.1 && !videoEl.seeking) {
 						try {
-							videoEl.currentTime = offset;
+							videoEl.currentTime = Math.max(0, videoTime);
 						} catch {
 							/* ignore seek errors */
 						}
@@ -594,15 +610,26 @@ function ExportPageContent() {
 				const media = mediaRecords.find((m) => m.id === audioClip.sourceId);
 				if (media) {
 					const offset = Math.max(0, timeSec - audioClip.start);
+					const audioSourceStart =
+						typeof audioClip.props?.sourceStart === "number" ? audioClip.props.sourceStart : 0;
+					const audioTime = calculateSourceTime(offset, audioClip.props || {}, audioSourceStart);
+
+					// Apply playback speed for audio
+					const audioSpeed =
+						typeof audioClip.props?.playbackSpeed === "number"
+							? Math.abs(audioClip.props.playbackSpeed)
+							: 1.0;
+					audioElement.playbackRate = audioSpeed;
+
 					if (audioClip.id !== currentAudioClipId) {
 						audioElement.src = media.url;
-						audioElement.currentTime = offset;
+						audioElement.currentTime = Math.max(0, audioTime);
 						audioElement.play().catch(() => {
 							/* ignore */
 						});
 						currentAudioClipId = audioClip.id;
-					} else if (Math.abs(audioElement.currentTime - offset) > 0.2) {
-						audioElement.currentTime = offset;
+					} else if (Math.abs(audioElement.currentTime - audioTime) > 0.2) {
+						audioElement.currentTime = Math.max(0, audioTime);
 					}
 
 					// Update audio processor settings (EQ, effects, etc.)

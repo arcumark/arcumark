@@ -675,6 +675,47 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 
 				{clipKind === "video" && (
 					<>
+						<Label className="text-xs font-semibold">Speed & Timing</Label>
+						<div className="grid gap-2">
+							<div className="grid gap-2">
+								<Label>
+									Playback Speed ({((clip.props?.playbackSpeed as number) || 1.0).toFixed(2)}x)
+								</Label>
+								<Slider
+									min={0.25}
+									max={4}
+									step={0.25}
+									value={[(clip.props?.playbackSpeed as number) || 1.0]}
+									onValueChange={(values) =>
+										onChange({
+											props: {
+												...clip.props,
+												playbackSpeed: Array.isArray(values) ? values[0] : values,
+											},
+										})
+									}
+								/>
+							</div>
+
+							{/* Quick speed preset buttons */}
+							<div className="grid grid-cols-5 gap-1">
+								{[0.25, 0.5, 1, 2, 4].map((speed) => (
+									<Button
+										key={speed}
+										variant="outline"
+										size="sm"
+										onClick={() => onChange({ props: { ...clip.props, playbackSpeed: speed } })}
+									>
+										{speed}x
+									</Button>
+								))}
+							</div>
+						</div>
+					</>
+				)}
+
+				{clipKind === "video" && (
+					<>
 						<Label className="text-xs font-semibold">Transform</Label>
 						<div className="grid grid-cols-2 gap-3">
 							<div className="grid gap-2">

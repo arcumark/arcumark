@@ -27,6 +27,19 @@ export type AudioEffectSettings = {
 	peakLevelDb?: number; // Automatically calculated when loading file
 };
 
+export type SpeedKeyframe = {
+	time: number; // Relative time from clip start (0 ~ clip.duration) in seconds
+	speed: number; // Speed multiplier at this point
+	easing?: "linear" | "easeIn" | "easeOut" | "easeInOut"; // Default: 'linear'
+};
+
+export type ClipSpeedProps = {
+	playbackSpeed?: number; // Default: 1.0, range: 0.25 - 4.0
+	speedRampingEnabled?: boolean; // Default: false
+	reversePlayback?: boolean; // Default: false
+	speedKeyframes?: SpeedKeyframe[]; // For speed ramping
+};
+
 export type Clip = {
 	id: string;
 	start: number;
