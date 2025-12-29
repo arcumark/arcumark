@@ -58,25 +58,58 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 	}, [items]);
 
 	const handleItemClick = (itemId: string, shiftKey: boolean, categoryItems: MediaItem[]) => {
-		if (shiftKey && lastSelectedRef.current) {
-			// Range selection with Shift key
-			const lastIndex = categoryItems.findIndex((item) => item.id === lastSelectedRef.current);
-			const currentIndex = categoryItems.findIndex((item) => item.id === itemId);
-			if (lastIndex !== -1 && currentIndex !== -1) {
-				const start = Math.min(lastIndex, currentIndex);
-				const end = Math.max(lastIndex, currentIndex);
-				const rangeIds = categoryItems.slice(start, end + 1).map((item) => item.id);
+		if (shiftKey) {
+			// Shift key is pressed
+			if (selectedIds.has(itemId)) {
+				// Deselect if already selected
 				setSelectedIds((prev) => {
 					const next = new Set(prev);
-					rangeIds.forEach((id) => next.add(id));
+					next.delete(itemId);
 					return next;
 				});
+				// Don't update lastSelectedRef when deselecting
+				return;
 			}
-		} else {
-			// Single selection (clear previous selections)
-			setSelectedIds(new Set([itemId]));
+
+			// Not selected, so add to selection
+			if (lastSelectedRef.current) {
+				// Range selection with Shift key
+				const lastIndex = categoryItems.findIndex((item) => item.id === lastSelectedRef.current);
+				const currentIndex = categoryItems.findIndex((item) => item.id === itemId);
+				if (lastIndex !== -1 && currentIndex !== -1) {
+					const start = Math.min(lastIndex, currentIndex);
+					const end = Math.max(lastIndex, currentIndex);
+					const rangeIds = categoryItems.slice(start, end + 1).map((item) => item.id);
+					setSelectedIds((prev) => {
+						const next = new Set(prev);
+						rangeIds.forEach((id) => next.add(id));
+						return next;
+					});
+					return;
+				}
+			}
+
+			// No last selected or range selection failed, just add this item
+			setSelectedIds((prev) => new Set([...prev, itemId]));
 			lastSelectedRef.current = itemId;
+		} else {
+			// No Shift key
+			// Check if clicking on already selected item
+			if (selectedIds.has(itemId) && selectedIds.size === 1) {
+				// Deselect if it's the only selected item
+				setSelectedIds(new Set());
+				lastSelectedRef.current = null;
+			} else {
+				// Single selection (clear previous selections)
+				setSelectedIds(new Set([itemId]));
+				lastSelectedRef.current = itemId;
+			}
 		}
+	};
+
+	const handleClearSelection = () => {
+		setSelectedIds(new Set());
+		lastSelectedRef.current = null;
 	};
 
 	const handleDeleteClick = () => {
@@ -142,10 +175,13 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 					))}
 				</div>
 			</div>
-			<div className="bg-card grid flex-1 gap-3 overflow-auto p-3">
+			<div className="bg-card grid flex-1 gap-3 overflow-auto p-3" onClick={handleClearSelection}>
 				<div
 					className="hover:border-primary border-muted bg-background flex w-full cursor-pointer flex-col items-center justify-center gap-2 border border-dashed py-3 text-xs transition"
-					onClick={() => fileInputRef.current?.click()}
+					onClick={(e) => {
+						e.stopPropagation();
+						fileInputRef.current?.click();
+					}}
 				>
 					<UploadIcon className="size-4" />
 					Drop files or click to import
@@ -154,10 +190,17 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 					const isOpen = sections[category];
 					const itemsForSection = grouped[category];
 					return (
-						<div key={category} className="border-border bg-background border">
+						<div
+							key={category}
+							className="border-border bg-background border"
+							onClick={(e) => e.stopPropagation()}
+						>
 							<button
 								className="flex w-full items-center justify-between px-3 py-2 text-left text-xs"
-								onClick={() => setSections((prev) => ({ ...prev, [category]: !prev[category] }))}
+								onClick={(e) => {
+									e.stopPropagation();
+									setSections((prev) => ({ ...prev, [category]: !prev[category] }));
+								}}
 							>
 								<span className="flex items-center gap-2">
 									<span>{isOpen ? "▾" : "▸"}</span>
@@ -181,7 +224,10 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 															: "bg-background hover:bg-muted"
 													}`}
 													draggable
-													onClick={(e) => handleItemClick(item.id, e.shiftKey, itemsForSection)}
+													onClick={(e) => {
+														e.stopPropagation();
+														handleItemClick(item.id, e.shiftKey, itemsForSection);
+													}}
 													onDragStart={(e) => handleDragStart(e, item.id)}
 												>
 													<div className="border-border bg-card flex h-12 w-14 items-center justify-center border">
@@ -210,7 +256,10 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 																: "bg-background hover:bg-muted"
 														}`}
 														draggable
-														onClick={(e) => handleItemClick(item.id, e.shiftKey, itemsForSection)}
+														onClick={(e) => {
+															e.stopPropagation();
+															handleItemClick(item.id, e.shiftKey, itemsForSection);
+														}}
 														onDragStart={(e) => handleDragStart(e, item.id)}
 													>
 														<div className="border-border bg-card flex h-24 items-center justify-center border">
@@ -238,7 +287,10 @@ export function MediaBrowser({ items, onImport, onDelete }: Props) {
 																: "bg-background hover:bg-muted"
 														}`}
 														draggable
-														onClick={(e) => handleItemClick(item.id, e.shiftKey, itemsForSection)}
+														onClick={(e) => {
+															e.stopPropagation();
+															handleItemClick(item.id, e.shiftKey, itemsForSection);
+														}}
 														onDragStart={(e) => handleDragStart(e, item.id)}
 													>
 														<div className="border-border bg-card flex h-12 w-12 items-center justify-center overflow-hidden border">
