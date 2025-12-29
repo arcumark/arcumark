@@ -96,6 +96,13 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 	const opacityValue =
 		typeof clip.props?.opacity === "number" ? (clip.props.opacity as number) : 100;
 	const volumeValue = typeof clip.props?.volume === "number" ? (clip.props.volume as number) : 100;
+
+	// Video transform properties
+	const txValue = typeof clip.props?.tx === "number" ? (clip.props.tx as number) : 0;
+	const tyValue = typeof clip.props?.ty === "number" ? (clip.props.ty as number) : 0;
+	const scaleValue = typeof clip.props?.scale === "number" ? (clip.props.scale as number) : 1;
+
+	// Text properties
 	const textValue =
 		typeof clip.props?.text === "string" && clip.props.text.length > 0
 			? (clip.props.text as string)
@@ -217,6 +224,80 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						</div>
 					)}
 				</div>
+				{clipKind === "video" && (
+					<>
+						<Label className="text-xs font-semibold">Transform</Label>
+						<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-2">
+								<Label>Position X (px)</Label>
+								<Input
+									type="number"
+									step="1"
+									value={txValue}
+									onChange={(e) =>
+										onChange({
+											props: {
+												...clip.props,
+												tx: parseFloat(e.target.value) || 0,
+											},
+										})
+									}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label>Position Y (px)</Label>
+								<Input
+									type="number"
+									step="1"
+									value={tyValue}
+									onChange={(e) =>
+										onChange({
+											props: {
+												...clip.props,
+												ty: parseFloat(e.target.value) || 0,
+											},
+										})
+									}
+								/>
+							</div>
+						</div>
+						<div className="grid gap-2">
+							<Label>Scale</Label>
+							<Input
+								type="number"
+								min={0.1}
+								max={5}
+								step={0.1}
+								value={scaleValue}
+								onChange={(e) =>
+									onChange({
+										props: {
+											...clip.props,
+											scale: Math.min(5, Math.max(0.1, parseFloat(e.target.value) || 1)),
+										},
+									})
+								}
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Button
+								variant="outline"
+								onClick={() =>
+									onChange({
+										props: {
+											...clip.props,
+											tx: 0,
+											ty: 0,
+											scale: 1,
+										},
+									})
+								}
+							>
+								Reset Transform
+							</Button>
+						</div>
+					</>
+				)}
 				{clipKind === "text" && (
 					<>
 						<Label className="text-xs font-semibold">Text</Label>

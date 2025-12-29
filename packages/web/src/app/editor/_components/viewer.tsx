@@ -404,13 +404,25 @@ export function Viewer({
 											ref={videoRef}
 											className="h-full w-full object-contain"
 											style={{
-												transform:
-													activeClip &&
-													selectedClipId === activeClip.id &&
-													typeof activeClip.props?.tx === "number" &&
-													typeof activeClip.props?.ty === "number"
-														? `translate(${activeClip.props.tx}px, ${activeClip.props.ty}px)`
-														: undefined,
+												transform: (() => {
+													if (!activeClip) return undefined;
+													const tx =
+														typeof activeClip.props?.tx === "number" ? activeClip.props.tx : 0;
+													const ty =
+														typeof activeClip.props?.ty === "number" ? activeClip.props.ty : 0;
+													const scale =
+														typeof activeClip.props?.scale === "number"
+															? activeClip.props.scale
+															: 1;
+													const transforms = [];
+													if (tx !== 0 || ty !== 0) {
+														transforms.push(`translate(${tx}px, ${ty}px)`);
+													}
+													if (scale !== 1) {
+														transforms.push(`scale(${scale})`);
+													}
+													return transforms.length > 0 ? transforms.join(" ") : undefined;
+												})(),
 												clipPath: (() => {
 													const props = activeClip?.props || {};
 													if (
