@@ -26,6 +26,7 @@ import type {
 	WhiteBalance,
 } from "@/lib/color/color-correction";
 import type { ClipKeyframes } from "@/lib/animation/keyframes";
+import { MOTION_TEMPLATES, applyMotionTemplate } from "@/lib/motion/motion-templates";
 import { Trash2, Plus } from "lucide-react";
 
 type ClipMarker = {
@@ -612,8 +613,48 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 					</>
 				)}
 
+				{/* Motion Graphics Templates */}
+				{((clipKind as string) === "text" || (clipKind as string) === "shape") && (
+					<>
+						<Label className="text-xs font-semibold">Motion Graphics Templates</Label>
+						<div className="grid gap-2">
+							<Select
+								value=""
+								onValueChange={(value) => {
+									if (!value) return;
+									const template = MOTION_TEMPLATES.find((t) => t.id === value);
+									if (
+										template &&
+										(template.category === (clipKind as string) || template.category === "combined")
+									) {
+										const newProps = applyMotionTemplate(template, clip.props || {});
+										onChange({ props: newProps });
+									}
+								}}
+							>
+								<SelectTrigger>
+									<SelectValue>
+										<span className="text-muted-foreground">Apply template...</span>
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									{MOTION_TEMPLATES.filter(
+										(t) => t.category === (clipKind as string) || t.category === "combined"
+									).map((t) => (
+										<SelectItem key={t.id} value={t.id}>
+											{t.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					</>
+				)}
+
 				{/* Keyframe Animation Section */}
-				{(clipKind === "video" || clipKind === "text") && (
+				{(clipKind === "video" ||
+					(clipKind as string) === "text" ||
+					(clipKind as string) === "shape") && (
 					<>
 						<Label className="text-xs font-semibold">Keyframe Animation</Label>
 						<KeyframesManager
@@ -632,7 +673,9 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 							supportedProperties={
 								clipKind === "video"
 									? ["tx", "ty", "scale", "opacity"]
-									: ["x", "y", "rotation", "opacity"]
+									: (clipKind as string) === "shape"
+										? ["x", "y", "rotation", "opacity", "width", "height"]
+										: ["x", "y", "rotation", "opacity"]
 							}
 						/>
 					</>
@@ -1371,6 +1414,375 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 								/>
 							</div>
 						</div>
+						{/* Text Shadow */}
+						<Label className="text-xs font-semibold">Text Shadow</Label>
+						<div className="grid gap-2">
+							<div className="flex items-center gap-2">
+								<Checkbox
+									checked={(clip.props?.textShadowEnabled as boolean) || false}
+									onCheckedChange={(checked) =>
+										onChange({
+											props: { ...clip.props, textShadowEnabled: !!checked },
+										})
+									}
+								/>
+								<Label>Enable shadow</Label>
+							</div>
+							{(clip.props?.textShadowEnabled as boolean) && (
+								<div className="grid gap-2 pl-6">
+									<div className="grid gap-2">
+										<Label>Shadow color</Label>
+										<Input
+											className="h-9 w-full cursor-pointer px-2 py-1"
+											type="color"
+											value={
+												typeof clip.props?.textShadowColor === "string" &&
+												clip.props.textShadowColor.length > 0
+													? (clip.props.textShadowColor as string)
+													: "#000000"
+											}
+											onChange={(e) =>
+												onChange({
+													props: { ...clip.props, textShadowColor: e.target.value },
+												})
+											}
+										/>
+									</div>
+									<div className="grid grid-cols-3 gap-2">
+										<div className="grid gap-2">
+											<Label>Offset X (px)</Label>
+											<Input
+												type="number"
+												min={-50}
+												max={50}
+												value={(clip.props?.textShadowOffsetX as number) || 2}
+												onChange={(e) =>
+													onChange({
+														props: {
+															...clip.props,
+															textShadowOffsetX: parseFloat(e.target.value) || 0,
+														},
+													})
+												}
+											/>
+										</div>
+										<div className="grid gap-2">
+											<Label>Offset Y (px)</Label>
+											<Input
+												type="number"
+												min={-50}
+												max={50}
+												value={(clip.props?.textShadowOffsetY as number) || 2}
+												onChange={(e) =>
+													onChange({
+														props: {
+															...clip.props,
+															textShadowOffsetY: parseFloat(e.target.value) || 0,
+														},
+													})
+												}
+											/>
+										</div>
+										<div className="grid gap-2">
+											<Label>Blur (px)</Label>
+											<Input
+												type="number"
+												min={0}
+												max={50}
+												value={(clip.props?.textShadowBlur as number) || 4}
+												onChange={(e) =>
+													onChange({
+														props: {
+															...clip.props,
+															textShadowBlur: Math.max(0, parseFloat(e.target.value) || 0),
+														},
+													})
+												}
+											/>
+										</div>
+									</div>
+								</div>
+							)}
+						</div>
+						{/* Text Animation */}
+						<Label className="text-xs font-semibold">Text Animation</Label>
+						<div className="grid gap-2">
+							<div className="grid gap-2">
+								<Label>Animation type</Label>
+								<Select
+									value={(clip.props?.textAnimationType as string) || "none"}
+									onValueChange={(value) =>
+										onChange({
+											props: {
+												...clip.props,
+												textAnimationType: value === "none" ? undefined : value,
+											},
+										})
+									}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="none">None</SelectItem>
+										<SelectItem value="fadeIn">Fade In</SelectItem>
+										<SelectItem value="slideInLeft">Slide In (Left)</SelectItem>
+										<SelectItem value="slideInRight">Slide In (Right)</SelectItem>
+										<SelectItem value="slideInUp">Slide In (Up)</SelectItem>
+										<SelectItem value="slideInDown">Slide In (Down)</SelectItem>
+										<SelectItem value="typewriter">Typewriter</SelectItem>
+										<SelectItem value="scaleIn">Scale In</SelectItem>
+										<SelectItem value="bounceIn">Bounce In</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							{(clip.props?.textAnimationType as string) &&
+								(clip.props?.textAnimationType as string) !== "none" && (
+									<div className="grid gap-2">
+										<Label>Duration (s)</Label>
+										<Input
+											type="number"
+											min={0.1}
+											max={5}
+											step={0.1}
+											value={(clip.props?.textAnimationDuration as number) || 1}
+											onChange={(e) =>
+												onChange({
+													props: {
+														...clip.props,
+														textAnimationDuration: Math.max(
+															0.1,
+															Math.min(5, parseFloat(e.target.value) || 1)
+														),
+													},
+												})
+											}
+										/>
+									</div>
+								)}
+						</div>
+					</>
+				)}
+				{/* Shape Properties */}
+				{(clipKind as string) === "shape" && (
+					<>
+						<Label className="text-xs font-semibold">Shape</Label>
+						<div className="grid gap-2">
+							<Label>Shape type</Label>
+							<Select
+								value={(clip.props?.shapeType as string) || "rectangle"}
+								onValueChange={(value) =>
+									onChange({
+										props: { ...clip.props, shapeType: value },
+									})
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="rectangle">Rectangle</SelectItem>
+									<SelectItem value="circle">Circle</SelectItem>
+									<SelectItem value="ellipse">Ellipse</SelectItem>
+									<SelectItem value="line">Line</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-2">
+								<Label>Pos X (%)</Label>
+								<Input
+									type="number"
+									min={0}
+									max={100}
+									value={typeof clip.props?.x === "number" ? clip.props.x : 50}
+									onChange={(e) =>
+										onChange({
+											props: {
+												...clip.props,
+												x: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)),
+											},
+										})
+									}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label>Pos Y (%)</Label>
+								<Input
+									type="number"
+									min={0}
+									max={100}
+									value={typeof clip.props?.y === "number" ? clip.props.y : 50}
+									onChange={(e) =>
+										onChange({
+											props: {
+												...clip.props,
+												y: Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)),
+											},
+										})
+									}
+								/>
+							</div>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-2">
+								<Label>Width (px)</Label>
+								<Input
+									type="number"
+									min={1}
+									max={2000}
+									value={typeof clip.props?.width === "number" ? clip.props.width : 200}
+									onChange={(e) =>
+										onChange({
+											props: {
+												...clip.props,
+												width: Math.min(2000, Math.max(1, parseFloat(e.target.value) || 200)),
+											},
+										})
+									}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label>Height (px)</Label>
+								<Input
+									type="number"
+									min={1}
+									max={2000}
+									value={typeof clip.props?.height === "number" ? clip.props.height : 100}
+									onChange={(e) =>
+										onChange({
+											props: {
+												...clip.props,
+												height: Math.min(2000, Math.max(1, parseFloat(e.target.value) || 100)),
+											},
+										})
+									}
+								/>
+							</div>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-2">
+								<Label>Rotation (deg)</Label>
+								<Input
+									type="number"
+									min={-360}
+									max={360}
+									value={typeof clip.props?.rotation === "number" ? clip.props.rotation : 0}
+									onChange={(e) =>
+										onChange({
+											props: { ...clip.props, rotation: parseFloat(e.target.value) || 0 },
+										})
+									}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label>Opacity</Label>
+								<Input
+									type="number"
+									min={0}
+									max={100}
+									value={typeof clip.props?.opacity === "number" ? clip.props.opacity : 100}
+									onChange={(e) =>
+										onChange({
+											props: {
+												...clip.props,
+												opacity: Math.min(100, Math.max(0, parseFloat(e.target.value) || 100)),
+											},
+										})
+									}
+								/>
+							</div>
+						</div>
+						<div className="grid gap-2">
+							<Label>Color</Label>
+							<Input
+								className="h-9 w-full cursor-pointer px-2 py-1"
+								type="color"
+								value={
+									typeof clip.props?.color === "string" && clip.props.color.length > 0
+										? (clip.props.color as string)
+										: "#ffffff"
+								}
+								onChange={(e) =>
+									onChange({
+										props: { ...clip.props, color: e.target.value },
+									})
+								}
+							/>
+						</div>
+						<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-2">
+								<Label>Anchor X</Label>
+								<Select
+									value={
+										typeof clip.props?.anchorX === "string"
+											? (clip.props.anchorX as string)
+											: "center"
+									}
+									onValueChange={(value) =>
+										onChange({
+											props: {
+												...clip.props,
+												anchorX: value as "left" | "center" | "right",
+											},
+										})
+									}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="left">Left</SelectItem>
+										<SelectItem value="center">Center</SelectItem>
+										<SelectItem value="right">Right</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="grid gap-2">
+								<Label>Anchor Y</Label>
+								<Select
+									value={
+										typeof clip.props?.anchorY === "string"
+											? (clip.props.anchorY as string)
+											: "center"
+									}
+									onValueChange={(value) =>
+										onChange({
+											props: {
+												...clip.props,
+												anchorY: value as "top" | "center" | "bottom",
+											},
+										})
+									}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="top">Top</SelectItem>
+										<SelectItem value="center">Center</SelectItem>
+										<SelectItem value="bottom">Bottom</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+						{/* Keyframe Animation for Shapes */}
+						<Label className="text-xs font-semibold">Keyframe Animation</Label>
+						<KeyframesManager
+							value={
+								(clip.props?.keyframes as ClipKeyframes) || {
+									properties: [],
+								}
+							}
+							clipDuration={clip.end - clip.start}
+							clipProps={clip.props || {}}
+							onChange={(keyframes) =>
+								onChange({
+									props: { ...clip.props, keyframes },
+								})
+							}
+							supportedProperties={["x", "y", "rotation", "opacity", "width", "height"]}
+						/>
 					</>
 				)}
 				<div className="grid gap-2">

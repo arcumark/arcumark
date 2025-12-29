@@ -33,6 +33,7 @@ type Props = {
 function trackBadgeClass(kind: Track["kind"]) {
 	if (kind === "audio") return "h-6 w-2 bg-emerald-500";
 	if (kind === "text") return "h-6 w-2 bg-purple-500";
+	if ((kind as string) === "shape") return "h-6 w-2 bg-orange-500";
 	return "h-6 w-2 bg-blue-500";
 }
 
@@ -491,7 +492,9 @@ export function TimelineView({
 												? "bg-emerald-900/60"
 												: track.kind === "text"
 													? "bg-purple-900/60"
-													: "bg-blue-900/60";
+													: (track.kind as string) === "shape"
+														? "bg-orange-900/60"
+														: "bg-blue-900/60";
 										const isLocked = (track as Track & { locked?: boolean }).locked ?? false;
 										return (
 											<div

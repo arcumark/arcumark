@@ -60,7 +60,7 @@ export type Clip = {
 
 export type Track = {
 	id: string;
-	kind: "video" | "audio" | "text";
+	kind: "video" | "audio" | "text" | "shape";
 	clips: Clip[];
 	locked?: boolean; // Track lock
 };

@@ -45,7 +45,16 @@ const MIN_TOP = 400;
 const MIN_TIMELINE = 200;
 
 function nextTrackId(kind: Track["kind"], tracks: Track[]) {
-	const prefix = kind === "video" ? "V" : kind === "audio" ? "A" : "T";
+	const prefix =
+		kind === "video"
+			? "V"
+			: kind === "audio"
+				? "A"
+				: kind === "text"
+					? "T"
+					: kind === "shape"
+						? "S"
+						: "X";
 	const count = tracks.filter((t) => t.kind === kind).length + 1;
 	return `${prefix}${count}`;
 }
@@ -446,6 +455,14 @@ function EditorPageContent() {
 		if (!textTrack) return null;
 		return (
 			textTrack.clips.find((clip) => currentTime >= clip.start && currentTime <= clip.end) ?? null
+		);
+	}, [timeline.tracks, currentTime]);
+
+	const activeShapeClip = useMemo(() => {
+		const shapeTrack = timeline.tracks.find((t) => (t.kind as string) === "shape");
+		if (!shapeTrack) return null;
+		return (
+			shapeTrack.clips.find((clip) => currentTime >= clip.start && currentTime <= clip.end) ?? null
 		);
 	}, [timeline.tracks, currentTime]);
 
@@ -1014,6 +1031,7 @@ function EditorPageContent() {
 								activeAudioClip={activeAudioClip}
 								activeAudioSource={activeAudioSource}
 								activeTextClip={activeTextClip}
+								activeShapeClip={activeShapeClip}
 								selectedClipId={selectedClipId}
 								selectedClipKind={selectedClipKind}
 								editMode={editMode}
@@ -1141,6 +1159,65 @@ function EditorPageContent() {
 								}}
 							>
 								Add text clip
+							</Button>
+							<Button
+								variant="outline"
+								onClick={() => {
+									setTimeline((prev) => {
+										let nextTracks = [...prev.tracks];
+										let trackIndex = nextTracks.findIndex(
+											(t) => (t.kind as string) === "shape" && t.clips.length === 0
+										);
+										if (trackIndex === -1) {
+											nextTracks = [
+												...nextTracks,
+												{
+													id: nextTrackId("shape" as Track["kind"], nextTracks),
+													kind: "shape" as Track["kind"],
+													clips: [],
+												},
+											];
+											trackIndex = nextTracks.length - 1;
+										}
+										const track = nextTracks[trackIndex];
+										const start = currentTime;
+										const duration = 3;
+										const end = start + duration;
+										let nextDuration = prev.duration;
+										if (end > prev.duration) {
+											nextDuration = Math.ceil(end + 1);
+										}
+										const clipId = `shape_${Date.now()}`;
+										const newClip: Clip = {
+											id: clipId,
+											start,
+											end,
+											sourceId: "shape",
+											props: {
+												name: "Shape",
+												shapeType: "rectangle",
+												x: 50,
+												y: 50,
+												width: 200,
+												height: 100,
+												color: "#ffffff",
+												opacity: 100,
+												rotation: 0,
+												anchorX: "center",
+												anchorY: "center",
+											},
+										};
+										const updatedTrack: typeof track = {
+											...track,
+											clips: [...track.clips, newClip],
+										};
+										nextTracks[trackIndex] = updatedTrack;
+										setSelectedClipId(clipId);
+										return { ...prev, duration: nextDuration, tracks: nextTracks };
+									});
+								}}
+							>
+								Add shape clip
 							</Button>
 							<label className="flex items-center gap-1 text-xs select-none">
 								<span>Mode:</span>

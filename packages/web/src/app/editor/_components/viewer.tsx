@@ -33,8 +33,9 @@ type Props = {
 	activeAudioClip: Clip | null;
 	activeAudioSource: MediaItem | null;
 	activeTextClip: Clip | null;
+	activeShapeClip: Clip | null;
 	selectedClipId: string | null;
-	selectedClipKind: "video" | "audio" | "text" | null;
+	selectedClipKind: "video" | "audio" | "text" | "shape" | null;
 	editMode: EditMode;
 	onAdjustClip?: (clipId: string, props: Record<string, unknown>) => void;
 	onScrub: (time: number) => void;
@@ -71,6 +72,7 @@ export function Viewer({
 	activeAudioClip,
 	activeAudioSource,
 	activeTextClip,
+	activeShapeClip,
 	selectedClipId,
 	selectedClipKind,
 	editMode,
@@ -868,14 +870,111 @@ export function Viewer({
 											opacity = animatedProps.opacity ?? defaultOpacity;
 										}
 
+										// Apply text animation
+										const textAnimationType = activeTextClip.props?.textAnimationType as
+											| string
+											| undefined;
+										const textAnimationDuration =
+											(typeof activeTextClip.props?.textAnimationDuration === "number"
+												? activeTextClip.props.textAnimationDuration
+												: 1) || 1;
+										const animationProgress =
+											clipProgress >= 0 && clipProgress <= clipDuration
+												? Math.min(1, clipProgress / textAnimationDuration)
+												: 1;
+
+										// Get text animation styles
+										const textAnimationStyles: React.CSSProperties = {};
+										if (textAnimationType && textAnimationType !== "none") {
+											if (textAnimationType === "fadeIn") {
+												textAnimationStyles.opacity = animationProgress;
+											} else if (textAnimationType === "slideInLeft") {
+												textAnimationStyles.opacity = animationProgress;
+												textAnimationStyles.transform = `translateX(${(1 - animationProgress) * -100}px)`;
+											} else if (textAnimationType === "slideInRight") {
+												textAnimationStyles.opacity = animationProgress;
+												textAnimationStyles.transform = `translateX(${(1 - animationProgress) * 100}px)`;
+											} else if (textAnimationType === "slideInUp") {
+												textAnimationStyles.opacity = animationProgress;
+												textAnimationStyles.transform = `translateY(${(1 - animationProgress) * -100}px)`;
+											} else if (textAnimationType === "slideInDown") {
+												textAnimationStyles.opacity = animationProgress;
+												textAnimationStyles.transform = `translateY(${(1 - animationProgress) * 100}px)`;
+											} else if (textAnimationType === "scaleIn") {
+												textAnimationStyles.opacity = animationProgress;
+												textAnimationStyles.transform = `scale(${0.5 + animationProgress * 0.5})`;
+											} else if (textAnimationType === "bounceIn") {
+												textAnimationStyles.opacity = animationProgress;
+												if (animationProgress < 1) {
+													const bounce = 1 - Math.pow(1 - animationProgress, 3);
+													textAnimationStyles.transform = `scale(${bounce})`;
+												}
+											}
+										}
+
+										// Get text shadow styles
+										const textShadowEnabled =
+											typeof activeTextClip.props?.textShadowEnabled === "boolean" &&
+											activeTextClip.props.textShadowEnabled;
+										const textShadowColor =
+											typeof activeTextClip.props?.textShadowColor === "string" &&
+											activeTextClip.props.textShadowColor.length > 0
+												? activeTextClip.props.textShadowColor
+												: "#000000";
+										const textShadowOffsetX =
+											typeof activeTextClip.props?.textShadowOffsetX === "number"
+												? activeTextClip.props.textShadowOffsetX
+												: 2;
+										const textShadowOffsetY =
+											typeof activeTextClip.props?.textShadowOffsetY === "number"
+												? activeTextClip.props.textShadowOffsetY
+												: 2;
+										const textShadowBlur =
+											typeof activeTextClip.props?.textShadowBlur === "number"
+												? activeTextClip.props.textShadowBlur
+												: 4;
+
+										const textShadowStyle = textShadowEnabled
+											? `${textShadowOffsetX}px ${textShadowOffsetY}px ${textShadowBlur}px ${textShadowColor}`
+											: "none";
+
+										// Get text content (typewriter effect)
+										const fullText =
+											typeof activeTextClip.props?.text === "string" &&
+											activeTextClip.props.text.length > 0
+												? activeTextClip.props.text
+												: "Text";
+										let displayText = fullText;
+										if (
+											textAnimationType === "typewriter" &&
+											clipProgress >= 0 &&
+											clipProgress <= clipDuration
+										) {
+											const effectiveDuration = Math.min(textAnimationDuration, clipDuration);
+											const charsPerSecond = fullText.length / effectiveDuration;
+											const visibleChars = Math.floor(clipProgress * charsPerSecond);
+											displayText = fullText.slice(0, Math.min(visibleChars, fullText.length));
+										}
+
+										// Combine transforms
+										const baseTransform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+										const animationTransform = (textAnimationStyles.transform as string) || "";
+										const combinedTransform = animationTransform
+											? `${baseTransform} ${animationTransform}`
+											: baseTransform;
+
 										return (
 											<div
 												className="pointer-events-none absolute"
 												style={{
 													left: `${x}%`,
 													top: `${y}%`,
-													transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-													opacity: opacity / 100,
+													transform: combinedTransform,
+													opacity:
+														(opacity / 100) *
+														(typeof textAnimationStyles.opacity === "number"
+															? textAnimationStyles.opacity
+															: 1),
 													transformOrigin: `${typeof activeTextClip.props?.anchorX === "string" ? activeTextClip.props.anchorX : "center"} ${typeof activeTextClip.props?.anchorY === "string" ? activeTextClip.props.anchorY : "center"}`,
 													textAlign:
 														typeof activeTextClip.props?.align === "string"
@@ -921,12 +1020,10 @@ export function Viewer({
 																		typeof activeTextClip.props?.size === "number"
 																			? `${activeTextClip.props.size}px`
 																			: "24px",
+																	textShadow: textShadowStyle,
 																}}
 															>
-																{typeof activeTextClip.props?.text === "string" &&
-																activeTextClip.props.text.length > 0
-																	? (activeTextClip.props.text as string)
-																	: "Text"}
+																{displayText}
 															</span>
 														)}
 													<span
@@ -946,14 +1043,140 @@ export function Viewer({
 																typeof activeTextClip.props?.size === "number"
 																	? `${activeTextClip.props.size}px`
 																	: "24px",
+															textShadow: textShadowStyle,
 														}}
 													>
-														{typeof activeTextClip.props?.text === "string" &&
-														activeTextClip.props.text.length > 0
-															? (activeTextClip.props.text as string)
-															: "Text"}
+														{displayText}
 													</span>
 												</div>
+											</div>
+										);
+									})()}
+								{/* Shape Layer */}
+								{activeShapeClip &&
+									(() => {
+										const clipProgress = currentTime - activeShapeClip.start;
+										const clipDuration = activeShapeClip.end - activeShapeClip.start;
+
+										const shapeType =
+											(typeof activeShapeClip.props?.shapeType === "string" &&
+												activeShapeClip.props.shapeType) ||
+											"rectangle";
+										const x =
+											typeof activeShapeClip.props?.x === "number" ? activeShapeClip.props.x : 50;
+										const y =
+											typeof activeShapeClip.props?.y === "number" ? activeShapeClip.props.y : 50;
+										const width =
+											typeof activeShapeClip.props?.width === "number"
+												? activeShapeClip.props.width
+												: 200;
+										const height =
+											typeof activeShapeClip.props?.height === "number"
+												? activeShapeClip.props.height
+												: 100;
+										const color =
+											typeof activeShapeClip.props?.color === "string" &&
+											activeShapeClip.props.color.length > 0
+												? activeShapeClip.props.color
+												: "#ffffff";
+										const opacity =
+											typeof activeShapeClip.props?.opacity === "number"
+												? activeShapeClip.props.opacity
+												: 100;
+										const rotation =
+											typeof activeShapeClip.props?.rotation === "number"
+												? activeShapeClip.props.rotation
+												: 0;
+										const anchorX =
+											typeof activeShapeClip.props?.anchorX === "string"
+												? activeShapeClip.props.anchorX
+												: "center";
+										const anchorY =
+											typeof activeShapeClip.props?.anchorY === "string"
+												? activeShapeClip.props.anchorY
+												: "center";
+
+										// Apply keyframe animations if present
+										const keyframes = activeShapeClip.props?.keyframes as ClipKeyframes | undefined;
+										let animatedX = x;
+										let animatedY = y;
+										let animatedRotation = rotation;
+										let animatedOpacity = opacity;
+										let animatedWidth = width;
+										let animatedHeight = height;
+
+										if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+											const animatedProps = getAnimatedProperties(keyframes, clipProgress, {
+												x,
+												y,
+												rotation,
+												opacity,
+												width,
+												height,
+											});
+											animatedX = animatedProps.x ?? x;
+											animatedY = animatedProps.y ?? y;
+											animatedRotation = animatedProps.rotation ?? rotation;
+											animatedOpacity = animatedProps.opacity ?? opacity;
+											animatedWidth = animatedProps.width ?? width;
+											animatedHeight = animatedProps.height ?? height;
+										}
+
+										const transformOriginX =
+											anchorX === "left" ? "0%" : anchorX === "right" ? "100%" : "50%";
+										const transformOriginY =
+											anchorY === "top" ? "0%" : anchorY === "bottom" ? "100%" : "50%";
+
+										return (
+											<div
+												className="pointer-events-none absolute"
+												style={{
+													left: `${animatedX}%`,
+													top: `${animatedY}%`,
+													transform: `translate(-50%, -50%) rotate(${animatedRotation}deg)`,
+													opacity: animatedOpacity / 100,
+													transformOrigin: `${transformOriginX} ${transformOriginY}`,
+												}}
+											>
+												{shapeType === "rectangle" && (
+													<div
+														style={{
+															width: `${animatedWidth}px`,
+															height: `${animatedHeight}px`,
+															backgroundColor: color,
+														}}
+													/>
+												)}
+												{shapeType === "circle" && (
+													<div
+														style={{
+															width: `${animatedWidth}px`,
+															height: `${animatedWidth}px`,
+															backgroundColor: color,
+															borderRadius: "50%",
+														}}
+													/>
+												)}
+												{shapeType === "ellipse" && (
+													<div
+														style={{
+															width: `${animatedWidth}px`,
+															height: `${animatedHeight}px`,
+															backgroundColor: color,
+															borderRadius: "50%",
+														}}
+													/>
+												)}
+												{shapeType === "line" && (
+													<div
+														style={{
+															width: `${animatedWidth}px`,
+															height: "2px",
+															backgroundColor: color,
+															transform: `rotate(${animatedRotation}deg)`,
+														}}
+													/>
+												)}
 											</div>
 										);
 									})()}
