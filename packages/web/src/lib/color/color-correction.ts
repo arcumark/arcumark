@@ -33,12 +33,22 @@ export type WhiteBalance = {
 	tint: number; // -150 to 150
 };
 
+export type ChromaKey = {
+	enabled: boolean;
+	color: string; // Hex color (e.g., "#00ff00" for green)
+	tolerance: number; // 0 to 100, how similar colors are to key color
+	edgeSoftness: number; // 0 to 100, softness of the edge
+	spillSuppression: number; // 0 to 100, removes color spill from edges
+	showMask?: boolean; // Show mask overlay for debugging
+};
+
 export type ColorCorrectionProps = {
 	colorWheel?: ColorWheelAdjustment;
 	curves?: ColorCurves;
 	levels?: LevelsAdjustment;
 	whiteBalance?: WhiteBalance;
 	lutUrl?: string; // URL to LUT image file
+	chromaKey?: ChromaKey;
 };
 
 /**
@@ -244,6 +254,10 @@ export async function applyColorCorrection(
 		result = await applyLut(result, props.lutUrl);
 	}
 
+	if (props.chromaKey) {
+		result = applyChromaKey(result, props.chromaKey);
+	}
+
 	return result;
 }
 
@@ -385,6 +399,104 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 		img.onerror = reject;
 		img.src = url;
 	});
+}
+
+/**
+ * Apply chroma key (green screen / blue screen) to an image data
+ */
+export function applyChromaKey(imageData: ImageData, chromaKey: ChromaKey): ImageData {
+	if (!chromaKey.enabled) {
+		return imageData;
+	}
+
+	const data = new Uint8ClampedArray(imageData.data);
+	const { color, tolerance, edgeSoftness, spillSuppression } = chromaKey;
+
+	// Parse key color
+	const keyR = parseInt(color.slice(1, 3), 16);
+	const keyG = parseInt(color.slice(3, 5), 16);
+	const keyB = parseInt(color.slice(5, 7), 16);
+
+	// Normalize tolerance (0-100 to 0-1)
+	const toleranceNorm = tolerance / 100;
+	const edgeSoftnessNorm = edgeSoftness / 100;
+	const spillSuppressionNorm = spillSuppression / 100;
+
+	// Convert key color to YUV for better color matching
+	const keyY = 0.299 * keyR + 0.587 * keyG + 0.114 * keyB;
+	const keyU = -0.14713 * keyR - 0.28886 * keyG + 0.436 * keyB;
+	const keyV = 0.615 * keyR - 0.51499 * keyG - 0.10001 * keyB;
+
+	for (let i = 0; i < data.length; i += 4) {
+		const r = data[i];
+		const g = data[i + 1];
+		const b = data[i + 2];
+
+		// Convert pixel to YUV
+		const y = 0.299 * r + 0.587 * g + 0.114 * b;
+		const u = -0.14713 * r - 0.28886 * g + 0.436 * b;
+		const v = 0.615 * r - 0.51499 * g - 0.10001 * b;
+
+		// Calculate color distance in YUV space (more perceptually uniform)
+		const dy = (y - keyY) / 255;
+		const du = (u - keyU) / 255;
+		const dv = (v - keyV) / 255;
+		const distance = Math.sqrt(dy * dy + du * du + dv * dv);
+
+		// Calculate alpha based on distance and tolerance
+		let alpha = 1.0;
+		if (distance < toleranceNorm) {
+			// Fully transparent
+			alpha = 0.0;
+		} else if (distance < toleranceNorm + edgeSoftnessNorm) {
+			// Soft edge transition
+			const t = (distance - toleranceNorm) / edgeSoftnessNorm;
+			alpha = t; // Smooth transition from 0 to 1
+		}
+
+		// Apply spill suppression (remove green/blue tint from edges)
+		if (spillSuppressionNorm > 0 && alpha < 1.0) {
+			// Detect if this is likely a spill area (close to key color but not fully transparent)
+			if (distance < toleranceNorm * 1.5) {
+				// Reduce the key color component
+				const spillAmount = (1.0 - alpha) * spillSuppressionNorm;
+
+				// Reduce green/blue spill
+				if (keyG > keyR && keyG > keyB) {
+					// Green screen
+					const greenRatio = g / (r + g + b + 1);
+					if (greenRatio > 0.4) {
+						const reduction = spillAmount * (greenRatio - 0.4) * 2;
+						data[i] = Math.min(255, r + reduction * 20);
+						data[i + 1] = Math.max(0, g - reduction * 30);
+						data[i + 2] = Math.min(255, b + reduction * 10);
+					}
+				} else if (keyB > keyR && keyB > keyG) {
+					// Blue screen
+					const blueRatio = b / (r + g + b + 1);
+					if (blueRatio > 0.4) {
+						const reduction = spillAmount * (blueRatio - 0.4) * 2;
+						data[i] = Math.min(255, r + reduction * 10);
+						data[i + 1] = Math.min(255, g + reduction * 10);
+						data[i + 2] = Math.max(0, b - reduction * 30);
+					}
+				}
+			}
+		}
+
+		// Set alpha channel
+		data[i + 3] = Math.round(alpha * 255);
+
+		// If showing mask, render as grayscale
+		if (chromaKey.showMask) {
+			const maskValue = Math.round((1.0 - alpha) * 255);
+			data[i] = maskValue;
+			data[i + 1] = maskValue;
+			data[i + 2] = maskValue;
+		}
+	}
+
+	return new ImageData(data, imageData.width, imageData.height);
 }
 
 /**

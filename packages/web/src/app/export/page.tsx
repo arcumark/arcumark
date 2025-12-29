@@ -25,7 +25,9 @@ import {
 	applyWhiteBalance,
 	applyColorWheel,
 	applyCurves,
+	applyChromaKey,
 	type ColorCorrectionProps,
+	type ChromaKey,
 } from "@/lib/color/color-correction";
 import { getAnimatedProperties, type ClipKeyframes } from "@/lib/animation/keyframes";
 
@@ -554,6 +556,18 @@ function ExportPageContent() {
 				colorCorrection.curves ||
 				colorCorrection.levels ||
 				colorCorrection.whiteBalance;
+
+			// Apply chroma key if enabled (before color correction)
+			const chromaKey = clip.props?.chromaKey as ChromaKey | undefined;
+			if (chromaKey?.enabled) {
+				const x = Math.floor(dx);
+				const y = Math.floor(dy);
+				const w = Math.ceil(dw);
+				const h = Math.ceil(dh);
+				const imageData = ctx.getImageData(x, y, w, h);
+				const chromaKeyedData = applyChromaKey(imageData, chromaKey);
+				ctx.putImageData(chromaKeyedData, x, y);
+			}
 
 			if (hasColorCorrection) {
 				// Get image data from the drawn area (convert to integers for getImageData)

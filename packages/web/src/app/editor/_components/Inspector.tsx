@@ -24,6 +24,7 @@ import type {
 	ColorCurves,
 	LevelsAdjustment,
 	WhiteBalance,
+	ChromaKey,
 } from "@/lib/color/color-correction";
 import type { ClipKeyframes } from "@/lib/animation/keyframes";
 import { MOTION_TEMPLATES, applyMotionTemplate } from "@/lib/motion/motion-templates";
@@ -610,6 +611,266 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						>
 							Reset All Color Correction
 						</Button>
+
+						{/* Chroma Key Section */}
+						<Label className="text-xs font-semibold">Chroma Key (Green/Blue Screen)</Label>
+						<div className="grid gap-2">
+							<div className="flex items-center gap-2">
+								<Checkbox
+									checked={(clip.props?.chromaKey as ChromaKey)?.enabled || false}
+									onCheckedChange={(checked) => {
+										const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+											enabled: false,
+											color: "#00ff00",
+											tolerance: 30,
+											edgeSoftness: 10,
+											spillSuppression: 50,
+										};
+										onChange({
+											props: {
+												...clip.props,
+												chromaKey: {
+													...currentChromaKey,
+													enabled: !!checked,
+												},
+											},
+										});
+									}}
+								/>
+								<Label>Enable Chroma Key</Label>
+							</div>
+
+							{(clip.props?.chromaKey as ChromaKey)?.enabled && (
+								<div className="grid gap-2 pl-6">
+									<div className="grid gap-2">
+										<Label>Key Color</Label>
+										<div className="flex items-center gap-2">
+											<Input
+												className="h-9 w-full cursor-pointer px-2 py-1"
+												type="color"
+												value={(clip.props?.chromaKey as ChromaKey)?.color || "#00ff00"}
+												onChange={(e) => {
+													const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+														enabled: true,
+														color: "#00ff00",
+														tolerance: 30,
+														edgeSoftness: 10,
+														spillSuppression: 50,
+													};
+													onChange({
+														props: {
+															...clip.props,
+															chromaKey: {
+																...currentChromaKey,
+																color: e.target.value,
+															},
+														},
+													});
+												}}
+											/>
+											<div className="grid grid-cols-3 gap-1">
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => {
+														const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+															enabled: true,
+															color: "#00ff00",
+															tolerance: 30,
+															edgeSoftness: 10,
+															spillSuppression: 50,
+														};
+														onChange({
+															props: {
+																...clip.props,
+																chromaKey: { ...currentChromaKey, color: "#00ff00" },
+															},
+														});
+													}}
+												>
+													Green
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => {
+														const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+															enabled: true,
+															color: "#0000ff",
+															tolerance: 30,
+															edgeSoftness: 10,
+															spillSuppression: 50,
+														};
+														onChange({
+															props: {
+																...clip.props,
+																chromaKey: { ...currentChromaKey, color: "#0000ff" },
+															},
+														});
+													}}
+												>
+													Blue
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => {
+														const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+															enabled: true,
+															color: "#ff0000",
+															tolerance: 30,
+															edgeSoftness: 10,
+															spillSuppression: 50,
+														};
+														onChange({
+															props: {
+																...clip.props,
+																chromaKey: { ...currentChromaKey, color: "#ff0000" },
+															},
+														});
+													}}
+												>
+													Red
+												</Button>
+											</div>
+										</div>
+									</div>
+
+									<div className="grid gap-2">
+										<Label>
+											Tolerance (
+											{((clip.props?.chromaKey as ChromaKey)?.tolerance || 30).toFixed(0)})
+										</Label>
+										<Slider
+											min={0}
+											max={100}
+											step={1}
+											value={[(clip.props?.chromaKey as ChromaKey)?.tolerance || 30]}
+											onValueChange={(values) => {
+												const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+													enabled: true,
+													color: "#00ff00",
+													tolerance: 30,
+													edgeSoftness: 10,
+													spillSuppression: 50,
+												};
+												onChange({
+													props: {
+														...clip.props,
+														chromaKey: {
+															...currentChromaKey,
+															tolerance: Array.isArray(values) ? values[0] : values,
+														},
+													},
+												});
+											}}
+										/>
+									</div>
+
+									<div className="grid gap-2">
+										<Label>
+											Edge Softness (
+											{((clip.props?.chromaKey as ChromaKey)?.edgeSoftness || 10).toFixed(0)})
+										</Label>
+										<Slider
+											min={0}
+											max={100}
+											step={1}
+											value={[(clip.props?.chromaKey as ChromaKey)?.edgeSoftness || 10]}
+											onValueChange={(values) => {
+												const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+													enabled: true,
+													color: "#00ff00",
+													tolerance: 30,
+													edgeSoftness: 10,
+													spillSuppression: 50,
+												};
+												onChange({
+													props: {
+														...clip.props,
+														chromaKey: {
+															...currentChromaKey,
+															edgeSoftness: Array.isArray(values) ? values[0] : values,
+														},
+													},
+												});
+											}}
+										/>
+									</div>
+
+									<div className="grid gap-2">
+										<Label>
+											Spill Suppression (
+											{((clip.props?.chromaKey as ChromaKey)?.spillSuppression || 50).toFixed(0)})
+										</Label>
+										<Slider
+											min={0}
+											max={100}
+											step={1}
+											value={[(clip.props?.chromaKey as ChromaKey)?.spillSuppression || 50]}
+											onValueChange={(values) => {
+												const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+													enabled: true,
+													color: "#00ff00",
+													tolerance: 30,
+													edgeSoftness: 10,
+													spillSuppression: 50,
+												};
+												onChange({
+													props: {
+														...clip.props,
+														chromaKey: {
+															...currentChromaKey,
+															spillSuppression: Array.isArray(values) ? values[0] : values,
+														},
+													},
+												});
+											}}
+										/>
+									</div>
+
+									<div className="flex items-center gap-2">
+										<Checkbox
+											checked={(clip.props?.chromaKey as ChromaKey)?.showMask || false}
+											onCheckedChange={(checked) => {
+												const currentChromaKey = (clip.props?.chromaKey as ChromaKey) || {
+													enabled: true,
+													color: "#00ff00",
+													tolerance: 30,
+													edgeSoftness: 10,
+													spillSuppression: 50,
+												};
+												onChange({
+													props: {
+														...clip.props,
+														chromaKey: {
+															...currentChromaKey,
+															showMask: !!checked,
+														},
+													},
+												});
+											}}
+										/>
+										<Label>Show Mask (for debugging)</Label>
+									</div>
+
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											onChange({
+												props: {
+													...clip.props,
+													chromaKey: undefined,
+												},
+											})
+										}
+									>
+										Reset Chroma Key
+									</Button>
+								</div>
+							)}
+						</div>
 					</>
 				)}
 

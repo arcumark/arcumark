@@ -18,6 +18,7 @@ import { getAudioContext } from "@/lib/audio/audio-context";
 import { calculateNormalizeGain } from "@/lib/audio/normalize";
 import { calculateSourceTime } from "@/lib/timing/speed-utils";
 import { getAnimatedProperties, type ClipKeyframes } from "@/lib/animation/keyframes";
+import { applyChromaKey, type ChromaKey } from "@/lib/color/color-correction";
 
 type PresetOption = VideoPreset;
 
@@ -88,6 +89,7 @@ export function Viewer({
 	const videoContainerRef = useRef<HTMLDivElement | null>(null);
 	const contentRef = useRef<HTMLDivElement | null>(null);
 	const frameWrapperRef = useRef<HTMLDivElement | null>(null);
+	const chromaKeyCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const transformDragRef = useRef<{
 		startX: number;
 		startY: number;
@@ -329,6 +331,12 @@ export function Viewer({
 		};
 	}, [duration, onAdjustClip, onScrub, selectedClipId, selectedClipKind]);
 
+	// Check if chroma key is enabled
+	const chromaKey = useMemo(() => {
+		if (!activeClip) return null;
+		return (activeClip.props?.chromaKey as ChromaKey) || null;
+	}, [activeClip]);
+
 	useEffect(() => {
 		const video = videoRef.current;
 		if (!video || !activeSource?.url) {
@@ -512,6 +520,64 @@ export function Viewer({
 		return () => video.removeEventListener("loadedmetadata", handleLoaded);
 	}, [updateContentRect, activeSource?.url]);
 
+	// Update chroma key canvas on video frame updates
+	useEffect(() => {
+		const video = videoRef.current;
+		const canvas = chromaKeyCanvasRef.current;
+		const chromaKeyEnabled = chromaKey?.enabled;
+
+		if (!chromaKeyEnabled || !video || !canvas || !activeSource?.url) {
+			return;
+		}
+
+		const updateCanvas = () => {
+			if (video.videoWidth === 0 || video.videoHeight === 0) return;
+
+			const ctx = canvas.getContext("2d");
+			if (!ctx) return;
+
+			// Set canvas size to match video
+			if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+				canvas.width = video.videoWidth;
+				canvas.height = video.videoHeight;
+			}
+
+			// Draw video frame to canvas
+			ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+			// Get image data and apply chroma key
+			const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			const processedData = applyChromaKey(imageData, chromaKey);
+			ctx.putImageData(processedData, 0, 0);
+		};
+
+		// Update on timeupdate (throttled)
+		let rafId: number | null = null;
+		const handleTimeUpdate = () => {
+			if (rafId) return;
+			rafId = requestAnimationFrame(() => {
+				updateCanvas();
+				rafId = null;
+			});
+		};
+
+		video.addEventListener("timeupdate", handleTimeUpdate);
+		video.addEventListener("seeked", updateCanvas);
+
+		// Initial update
+		if (video.readyState >= 2) {
+			updateCanvas();
+		} else {
+			video.addEventListener("loadeddata", updateCanvas, { once: true });
+		}
+
+		return () => {
+			video.removeEventListener("timeupdate", handleTimeUpdate);
+			video.removeEventListener("seeked", updateCanvas);
+			if (rafId) cancelAnimationFrame(rafId);
+		};
+	}, [chromaKey, activeSource?.url]);
+
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
 			<div className="border-border bg-card flex items-center justify-between border-b px-3 py-2 text-xs">
@@ -570,161 +636,173 @@ export function Viewer({
 									}}
 								>
 									{activeSource?.type === "video" && activeSource.url ? (
-										<video
-											ref={videoRef}
-											className="h-full w-full object-contain"
-											style={{
-												opacity: computedOpacity,
-												filter: (() => {
-													if (!activeClip) return undefined;
-													const filters: string[] = [];
-													const brightness =
-														1 + ((activeClip.props?.brightness as number) || 0) / 100;
-													const contrast = 1 + ((activeClip.props?.contrast as number) || 0) / 100;
-													const saturation =
-														1 + ((activeClip.props?.saturation as number) || 0) / 100;
-													const blur = (activeClip.props?.blur as number) || 0;
+										<>
+											<video
+												ref={videoRef}
+												className="h-full w-full object-contain"
+												style={{
+													opacity: chromaKey?.enabled ? 0 : computedOpacity,
+													filter: (() => {
+														if (!activeClip) return undefined;
+														const filters: string[] = [];
+														const brightness =
+															1 + ((activeClip.props?.brightness as number) || 0) / 100;
+														const contrast =
+															1 + ((activeClip.props?.contrast as number) || 0) / 100;
+														const saturation =
+															1 + ((activeClip.props?.saturation as number) || 0) / 100;
+														const blur = (activeClip.props?.blur as number) || 0;
 
-													if (brightness !== 1) filters.push(`brightness(${brightness})`);
-													if (contrast !== 1) filters.push(`contrast(${contrast})`);
-													if (saturation !== 1) filters.push(`saturate(${saturation})`);
-													if (blur > 0) filters.push(`blur(${blur}px)`);
+														if (brightness !== 1) filters.push(`brightness(${brightness})`);
+														if (contrast !== 1) filters.push(`contrast(${contrast})`);
+														if (saturation !== 1) filters.push(`saturate(${saturation})`);
+														if (blur > 0) filters.push(`blur(${blur}px)`);
 
-													// Color correction approximations using CSS filters
-													const colorWheel = activeClip.props?.colorWheel as
-														| { hue: number; saturation: number; lightness: number }
-														| undefined;
-													if (colorWheel) {
-														// Hue rotation
-														if (colorWheel.hue !== 0) {
-															filters.push(`hue-rotate(${colorWheel.hue}deg)`);
+														// Color correction approximations using CSS filters
+														const colorWheel = activeClip.props?.colorWheel as
+															| { hue: number; saturation: number; lightness: number }
+															| undefined;
+														if (colorWheel) {
+															// Hue rotation
+															if (colorWheel.hue !== 0) {
+																filters.push(`hue-rotate(${colorWheel.hue}deg)`);
+															}
+															// Saturation adjustment (combined with existing saturation)
+															if (colorWheel.saturation !== 0) {
+																const satAdjust = 1 + colorWheel.saturation / 100;
+																filters.push(`saturate(${satAdjust})`);
+															}
+															// Lightness adjustment (using brightness)
+															if (colorWheel.lightness !== 0) {
+																const lightAdjust = 1 + colorWheel.lightness / 100;
+																filters.push(`brightness(${lightAdjust})`);
+															}
 														}
-														// Saturation adjustment (combined with existing saturation)
-														if (colorWheel.saturation !== 0) {
-															const satAdjust = 1 + colorWheel.saturation / 100;
-															filters.push(`saturate(${satAdjust})`);
+
+														// White balance approximation
+														const whiteBalance = activeClip.props?.whiteBalance as
+															| { temperature: number; tint: number }
+															| undefined;
+														if (whiteBalance) {
+															// Temperature adjustment (warm/cool)
+															const temp = whiteBalance.temperature;
+															if (temp < 6500) {
+																// Warm (yellow/orange) - increase red/yellow
+																const warmFactor = (6500 - temp) / 4500;
+																filters.push(`sepia(${warmFactor * 0.3})`);
+															} else if (temp > 6500) {
+																// Cool (blue) - increase blue
+																const coolFactor = (temp - 6500) / 1500;
+																filters.push(
+																	`sepia(${coolFactor * 0.2}) hue-rotate(${coolFactor * 10}deg)`
+																);
+															}
+															// Tint adjustment (green/magenta)
+															if (whiteBalance.tint !== 0) {
+																const tintFactor = whiteBalance.tint / 150;
+																filters.push(`hue-rotate(${tintFactor * 5}deg)`);
+															}
 														}
-														// Lightness adjustment (using brightness)
-														if (colorWheel.lightness !== 0) {
-															const lightAdjust = 1 + colorWheel.lightness / 100;
-															filters.push(`brightness(${lightAdjust})`);
-														}
-													}
 
-													// White balance approximation
-													const whiteBalance = activeClip.props?.whiteBalance as
-														| { temperature: number; tint: number }
-														| undefined;
-													if (whiteBalance) {
-														// Temperature adjustment (warm/cool)
-														const temp = whiteBalance.temperature;
-														if (temp < 6500) {
-															// Warm (yellow/orange) - increase red/yellow
-															const warmFactor = (6500 - temp) / 4500;
-															filters.push(`sepia(${warmFactor * 0.3})`);
-														} else if (temp > 6500) {
-															// Cool (blue) - increase blue
-															const coolFactor = (temp - 6500) / 1500;
-															filters.push(
-																`sepia(${coolFactor * 0.2}) hue-rotate(${coolFactor * 10}deg)`
-															);
-														}
-														// Tint adjustment (green/magenta)
-														if (whiteBalance.tint !== 0) {
-															const tintFactor = whiteBalance.tint / 150;
-															filters.push(`hue-rotate(${tintFactor * 5}deg)`);
-														}
-													}
-
-													return filters.length > 0 ? filters.join(" ") : undefined;
-												})(),
-												transform: (() => {
-													if (!activeClip) return undefined;
-
-													// Calculate clip-relative time for keyframes
-													const clipProgress = currentTime - activeClip.start;
-													const clipDuration = activeClip.end - activeClip.start;
-
-													// Get default values
-													const defaultTx =
-														typeof activeClip.props?.tx === "number" ? activeClip.props.tx : 0;
-													const defaultTy =
-														typeof activeClip.props?.ty === "number" ? activeClip.props.ty : 0;
-													const defaultScale =
-														typeof activeClip.props?.scale === "number"
-															? activeClip.props.scale
-															: 1;
-
-													// Apply keyframe animations if present
-													let tx = defaultTx;
-													let ty = defaultTy;
-													let scale = defaultScale;
-
-													const keyframes = activeClip.props?.keyframes as
-														| ClipKeyframes
-														| undefined;
-													if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
-														const animatedProps = getAnimatedProperties(keyframes, clipProgress, {
-															tx: defaultTx,
-															ty: defaultTy,
-															scale: defaultScale,
-														});
-														tx = animatedProps.tx ?? defaultTx;
-														ty = animatedProps.ty ?? defaultTy;
-														scale = animatedProps.scale ?? defaultScale;
-													}
-
-													const transforms = [];
-													if (tx !== 0 || ty !== 0) {
-														transforms.push(`translate(${tx}px, ${ty}px)`);
-													}
-													if (scale !== 1) {
-														transforms.push(`scale(${scale})`);
-													}
-													return transforms.length > 0 ? transforms.join(" ") : undefined;
-												})(),
-												clipPath:
-													computedClipPath ||
-													(() => {
-														const props = activeClip?.props || {};
-														if (
-															typeof props?.tlx === "number" ||
-															typeof props?.tly === "number" ||
-															typeof props?.trx === "number" ||
-															typeof props?.try === "number" ||
-															typeof props?.brx === "number" ||
-															typeof props?.bry === "number" ||
-															typeof props?.blx === "number" ||
-															typeof props?.bly === "number"
-														) {
-															const tlx = (props.tlx as number) || 0;
-															const tly = (props.tly as number) || 0;
-															const trx = (props.trx as number) || 0;
-															const trY = (props.try as number) || 0;
-															const brx = (props.brx as number) || 0;
-															const bry = (props.bry as number) || 0;
-															const blx = (props.blx as number) || 0;
-															const bly = (props.bly as number) || 0;
-															return `polygon(${0 + tlx}% ${0 + tly}%, ${100 + trx}% ${0 + trY}%, ${100 + brx}% ${100 + bry}%, ${0 + blx}% ${100 + bly}%)`;
-														}
-														if (
-															typeof props?.cropTop === "number" ||
-															typeof props?.cropRight === "number" ||
-															typeof props?.cropBottom === "number" ||
-															typeof props?.cropLeft === "number"
-														) {
-															const top = props.cropTop ?? 0;
-															const right = props.cropRight ?? 0;
-															const bottom = props.cropBottom ?? 0;
-															const left = props.cropLeft ?? 0;
-															return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
-														}
-														return undefined;
+														return filters.length > 0 ? filters.join(" ") : undefined;
 													})(),
-											}}
-										>
-											<track kind="captions" />
-										</video>
+													transform: (() => {
+														if (!activeClip) return undefined;
+
+														// Calculate clip-relative time for keyframes
+														const clipProgress = currentTime - activeClip.start;
+														const clipDuration = activeClip.end - activeClip.start;
+
+														// Get default values
+														const defaultTx =
+															typeof activeClip.props?.tx === "number" ? activeClip.props.tx : 0;
+														const defaultTy =
+															typeof activeClip.props?.ty === "number" ? activeClip.props.ty : 0;
+														const defaultScale =
+															typeof activeClip.props?.scale === "number"
+																? activeClip.props.scale
+																: 1;
+
+														// Apply keyframe animations if present
+														let tx = defaultTx;
+														let ty = defaultTy;
+														let scale = defaultScale;
+
+														const keyframes = activeClip.props?.keyframes as
+															| ClipKeyframes
+															| undefined;
+														if (keyframes && clipProgress >= 0 && clipProgress <= clipDuration) {
+															const animatedProps = getAnimatedProperties(keyframes, clipProgress, {
+																tx: defaultTx,
+																ty: defaultTy,
+																scale: defaultScale,
+															});
+															tx = animatedProps.tx ?? defaultTx;
+															ty = animatedProps.ty ?? defaultTy;
+															scale = animatedProps.scale ?? defaultScale;
+														}
+
+														const transforms = [];
+														if (tx !== 0 || ty !== 0) {
+															transforms.push(`translate(${tx}px, ${ty}px)`);
+														}
+														if (scale !== 1) {
+															transforms.push(`scale(${scale})`);
+														}
+														return transforms.length > 0 ? transforms.join(" ") : undefined;
+													})(),
+													clipPath:
+														computedClipPath ||
+														(() => {
+															const props = activeClip?.props || {};
+															if (
+																typeof props?.tlx === "number" ||
+																typeof props?.tly === "number" ||
+																typeof props?.trx === "number" ||
+																typeof props?.try === "number" ||
+																typeof props?.brx === "number" ||
+																typeof props?.bry === "number" ||
+																typeof props?.blx === "number" ||
+																typeof props?.bly === "number"
+															) {
+																const tlx = (props.tlx as number) || 0;
+																const tly = (props.tly as number) || 0;
+																const trx = (props.trx as number) || 0;
+																const trY = (props.try as number) || 0;
+																const brx = (props.brx as number) || 0;
+																const bry = (props.bry as number) || 0;
+																const blx = (props.blx as number) || 0;
+																const bly = (props.bly as number) || 0;
+																return `polygon(${0 + tlx}% ${0 + tly}%, ${100 + trx}% ${0 + trY}%, ${100 + brx}% ${100 + bry}%, ${0 + blx}% ${100 + bly}%)`;
+															}
+															if (
+																typeof props?.cropTop === "number" ||
+																typeof props?.cropRight === "number" ||
+																typeof props?.cropBottom === "number" ||
+																typeof props?.cropLeft === "number"
+															) {
+																const top = props.cropTop ?? 0;
+																const right = props.cropRight ?? 0;
+																const bottom = props.cropBottom ?? 0;
+																const left = props.cropLeft ?? 0;
+																return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
+															}
+															return undefined;
+														})(),
+												}}
+											>
+												<track kind="captions" />
+											</video>
+											{chromaKey?.enabled ? (
+												<canvas
+													ref={chromaKeyCanvasRef}
+													className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+													style={{
+														opacity: computedOpacity,
+													}}
+												/>
+											) : null}
+										</>
 									) : (
 										<div className="flex h-full w-full items-center justify-center text-xs select-none">
 											Import a video and add it to the timeline to preview.
