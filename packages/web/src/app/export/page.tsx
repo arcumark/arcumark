@@ -20,6 +20,13 @@ import { AudioProcessor } from "@/lib/audio/audio-processor";
 import { getAudioContext } from "@/lib/audio/audio-context";
 import { calculateNormalizeGain } from "@/lib/audio/normalize";
 import { calculateSourceTime } from "@/lib/timing/speed-utils";
+import {
+	applyLevels,
+	applyWhiteBalance,
+	applyColorWheel,
+	applyCurves,
+	type ColorCorrectionProps,
+} from "@/lib/color/color-correction";
 
 // This page is fully client-side and requires no server-side processing
 export const dynamic = "force-static";
@@ -485,6 +492,54 @@ function ExportPageContent() {
 			ctx.globalAlpha = baseOpacity * opacityMultiplier;
 
 			ctx.drawImage(element, sx, sy, sw, sh, dx, dy, dw, dh);
+
+			// Apply color correction if present (synchronous for export)
+			const colorCorrection: ColorCorrectionProps = {};
+			if (props.colorWheel && typeof props.colorWheel === "object") {
+				colorCorrection.colorWheel = props.colorWheel as ColorCorrectionProps["colorWheel"];
+			}
+			if (props.curves && typeof props.curves === "object") {
+				colorCorrection.curves = props.curves as ColorCorrectionProps["curves"];
+			}
+			if (props.levels && typeof props.levels === "object") {
+				colorCorrection.levels = props.levels as ColorCorrectionProps["levels"];
+			}
+			if (props.whiteBalance && typeof props.whiteBalance === "object") {
+				colorCorrection.whiteBalance = props.whiteBalance as ColorCorrectionProps["whiteBalance"];
+			}
+			// Note: LUT is async and will be skipped during export for performance
+			// if (props.lutUrl) colorCorrection.lutUrl = props.lutUrl as string;
+
+			const hasColorCorrection =
+				colorCorrection.colorWheel ||
+				colorCorrection.curves ||
+				colorCorrection.levels ||
+				colorCorrection.whiteBalance;
+
+			if (hasColorCorrection) {
+				// Get image data from the drawn area (convert to integers for getImageData)
+				const x = Math.floor(dx);
+				const y = Math.floor(dy);
+				const w = Math.ceil(dw);
+				const h = Math.ceil(dh);
+				const imageData = ctx.getImageData(x, y, w, h);
+				// Apply color correction synchronously (without LUT for performance)
+				let correctedData = imageData;
+				if (colorCorrection.levels) {
+					correctedData = applyLevels(correctedData, colorCorrection.levels);
+				}
+				if (colorCorrection.whiteBalance) {
+					correctedData = applyWhiteBalance(correctedData, colorCorrection.whiteBalance);
+				}
+				if (colorCorrection.colorWheel) {
+					correctedData = applyColorWheel(correctedData, colorCorrection.colorWheel);
+				}
+				if (colorCorrection.curves) {
+					correctedData = applyCurves(correctedData, colorCorrection.curves);
+				}
+				ctx.putImageData(correctedData, x, y);
+			}
+
 			ctx.restore();
 		};
 

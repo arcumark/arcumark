@@ -15,6 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ColorWheel } from "./color-wheel";
+import { CurvesEditor } from "./curves-editor";
+import { LevelsEditor } from "./levels-editor";
+import type {
+	ColorWheelAdjustment,
+	ColorCurves,
+	LevelsAdjustment,
+	WhiteBalance,
+} from "@/lib/color/color-correction";
 
 type Props = {
 	clip: Clip | null;
@@ -393,6 +402,205 @@ export function Inspector({ clip, clipKind, onChange }: Props) {
 						Reset Effects
 					</Button>
 				</div>
+
+				{/* Color Correction Section */}
+				{clipKind === "video" && (
+					<>
+						<Label className="text-xs font-semibold">Color Correction</Label>
+
+						{/* Color Wheel */}
+						<div className="grid gap-2">
+							<Label>Color Wheel</Label>
+							<ColorWheel
+								value={
+									(clip.props?.colorWheel as ColorWheelAdjustment) || {
+										hue: 0,
+										saturation: 0,
+										lightness: 0,
+									}
+								}
+								onChange={(colorWheel) =>
+									onChange({
+										props: { ...clip.props, colorWheel },
+									})
+								}
+							/>
+						</div>
+
+						{/* Curves */}
+						<div className="grid gap-2">
+							<Label>Curves</Label>
+							<CurvesEditor
+								value={
+									(clip.props?.curves as ColorCurves) || {
+										master: [],
+										red: [],
+										green: [],
+										blue: [],
+									}
+								}
+								onChange={(curves) =>
+									onChange({
+										props: { ...clip.props, curves },
+									})
+								}
+							/>
+						</div>
+
+						{/* Levels */}
+						<div className="grid gap-2">
+							<Label>Levels</Label>
+							<LevelsEditor
+								value={
+									(clip.props?.levels as LevelsAdjustment) || {
+										inputBlack: 0,
+										inputWhite: 255,
+										outputBlack: 0,
+										outputWhite: 255,
+										gamma: 1.0,
+									}
+								}
+								histogramData={null}
+								onChange={(levels) =>
+									onChange({
+										props: { ...clip.props, levels },
+									})
+								}
+							/>
+						</div>
+
+						{/* White Balance */}
+						<div className="grid gap-2">
+							<Label>White Balance</Label>
+							<div className="grid gap-2">
+								<div className="grid gap-2">
+									<Label>
+										Temperature (
+										{((clip.props?.whiteBalance as WhiteBalance)?.temperature || 6500).toFixed(0)}{" "}
+										K)
+									</Label>
+									<Slider
+										min={2000}
+										max={8000}
+										step={100}
+										value={[(clip.props?.whiteBalance as WhiteBalance)?.temperature || 6500]}
+										onValueChange={(values) => {
+											const wb = (clip.props?.whiteBalance as WhiteBalance) || {
+												temperature: 6500,
+												tint: 0,
+											};
+											onChange({
+												props: {
+													...clip.props,
+													whiteBalance: {
+														...wb,
+														temperature: Array.isArray(values) ? values[0] : values,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label>
+										Tint ({((clip.props?.whiteBalance as WhiteBalance)?.tint || 0).toFixed(0)})
+									</Label>
+									<Slider
+										min={-150}
+										max={150}
+										step={1}
+										value={[(clip.props?.whiteBalance as WhiteBalance)?.tint || 0]}
+										onValueChange={(values) => {
+											const wb = (clip.props?.whiteBalance as WhiteBalance) || {
+												temperature: 6500,
+												tint: 0,
+											};
+											onChange({
+												props: {
+													...clip.props,
+													whiteBalance: {
+														...wb,
+														tint: Array.isArray(values) ? values[0] : values,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() =>
+										onChange({
+											props: {
+												...clip.props,
+												whiteBalance: { temperature: 6500, tint: 0 },
+											},
+										})
+									}
+								>
+									Reset White Balance
+								</Button>
+							</div>
+						</div>
+
+						{/* LUT */}
+						<div className="grid gap-2">
+							<Label>LUT (Lookup Table)</Label>
+							<input
+								type="file"
+								accept=".cube,.png,.jpg,.jpeg"
+								onChange={(e) => {
+									const file = e.target.files?.[0];
+									if (file) {
+										const url = URL.createObjectURL(file);
+										onChange({
+											props: { ...clip.props, lutUrl: url },
+										});
+									}
+								}}
+								className="text-xs"
+							/>
+							{(clip.props?.lutUrl as string) && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => {
+										const url = clip.props?.lutUrl as string;
+										if (url) {
+											URL.revokeObjectURL(url);
+										}
+										onChange({
+											props: { ...clip.props, lutUrl: undefined },
+										});
+									}}
+								>
+									Remove LUT
+								</Button>
+							)}
+						</div>
+
+						{/* Reset All Color Correction */}
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() =>
+								onChange({
+									props: {
+										...clip.props,
+										colorWheel: undefined,
+										curves: undefined,
+										levels: undefined,
+										whiteBalance: undefined,
+										lutUrl: undefined,
+									},
+								})
+							}
+						>
+							Reset All Color Correction
+						</Button>
+					</>
+				)}
 
 				{/* Audio Equalizer Section */}
 				{clipKind === "audio" && (

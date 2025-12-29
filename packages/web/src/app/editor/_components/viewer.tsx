@@ -580,6 +580,52 @@ export function Viewer({
 													if (saturation !== 1) filters.push(`saturate(${saturation})`);
 													if (blur > 0) filters.push(`blur(${blur}px)`);
 
+													// Color correction approximations using CSS filters
+													const colorWheel = activeClip.props?.colorWheel as
+														| { hue: number; saturation: number; lightness: number }
+														| undefined;
+													if (colorWheel) {
+														// Hue rotation
+														if (colorWheel.hue !== 0) {
+															filters.push(`hue-rotate(${colorWheel.hue}deg)`);
+														}
+														// Saturation adjustment (combined with existing saturation)
+														if (colorWheel.saturation !== 0) {
+															const satAdjust = 1 + colorWheel.saturation / 100;
+															filters.push(`saturate(${satAdjust})`);
+														}
+														// Lightness adjustment (using brightness)
+														if (colorWheel.lightness !== 0) {
+															const lightAdjust = 1 + colorWheel.lightness / 100;
+															filters.push(`brightness(${lightAdjust})`);
+														}
+													}
+
+													// White balance approximation
+													const whiteBalance = activeClip.props?.whiteBalance as
+														| { temperature: number; tint: number }
+														| undefined;
+													if (whiteBalance) {
+														// Temperature adjustment (warm/cool)
+														const temp = whiteBalance.temperature;
+														if (temp < 6500) {
+															// Warm (yellow/orange) - increase red/yellow
+															const warmFactor = (6500 - temp) / 4500;
+															filters.push(`sepia(${warmFactor * 0.3})`);
+														} else if (temp > 6500) {
+															// Cool (blue) - increase blue
+															const coolFactor = (temp - 6500) / 1500;
+															filters.push(
+																`sepia(${coolFactor * 0.2}) hue-rotate(${coolFactor * 10}deg)`
+															);
+														}
+														// Tint adjustment (green/magenta)
+														if (whiteBalance.tint !== 0) {
+															const tintFactor = whiteBalance.tint / 150;
+															filters.push(`hue-rotate(${tintFactor * 5}deg)`);
+														}
+													}
+
 													return filters.length > 0 ? filters.join(" ") : undefined;
 												})(),
 												transform: (() => {
