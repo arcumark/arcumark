@@ -261,6 +261,34 @@ export async function applyColorCorrection(
 	return result;
 }
 
+/**
+ * Apply all synchronous color corrections to image data (no LUT).
+ */
+export function applyColorCorrectionSync(
+	imageData: ImageData,
+	props: ColorCorrectionProps
+): ImageData {
+	let result = imageData;
+
+	if (props.levels) {
+		result = applyLevels(result, props.levels);
+	}
+
+	if (props.whiteBalance) {
+		result = applyWhiteBalance(result, props.whiteBalance);
+	}
+
+	if (props.colorWheel) {
+		result = applyColorWheel(result, props.colorWheel);
+	}
+
+	if (props.curves) {
+		result = applyCurves(result, props.curves);
+	}
+
+	return result;
+}
+
 // Helper functions
 
 function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {

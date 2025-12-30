@@ -1,5 +1,5 @@
 export function generateImpulseResponse(
-	audioContext: AudioContext,
+	audioContext: BaseAudioContext,
 	type: "small" | "medium" | "large" | "hall"
 ): AudioBuffer {
 	const params = {

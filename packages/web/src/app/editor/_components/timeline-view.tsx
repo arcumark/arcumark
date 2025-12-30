@@ -278,19 +278,19 @@ export function TimelineView({
 		onDeleteClip,
 		onMoveClip,
 		onTimeChange,
-		onTrimClip,
-		onRippleTrim,
-		onRollTrim,
 		onSelectClip,
 		selectedClipId,
 		selectedClipIds,
-		onSelectClips,
 		snapEnabled,
 		snapTime,
 		safeDuration,
 		timeline.tracks,
 		width,
 		editMode,
+		onRippleTrim,
+		onRollTrim,
+		onTrimClip,
+		onSelectClips,
 	]);
 
 	return (
